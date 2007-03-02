@@ -13,14 +13,14 @@
 #ifndef _LCD_H_
 #define _LCD_H_
 #include "hd44780.h"
-#ifndef LCD_ONE_LINE_CHAR
+#ifndef LCD_CFG
+//---------------LCD配置------------------//
+#define LCD_CFG
+
 #define LCD_ONE_LINE_CHAR	16
-#endif//LCD_ONE_LINE_CHAR
-
-#ifndef LCD_LINE_COUNT
 #define LCD_LINE_COUNT	2
-#endif//LCD_LINE_COUNT
-
+//--------------LCD配置完-----------------//
+#endif//LCD_CFG
 /*
  * Initialize LCD controller.  Performs a software reset.
  */
@@ -33,16 +33,21 @@ void	lcd_putchar(char c);
 
 void lcd_ShowString(char *s);
 
-/***************************
+/******************************************************
 移动插入点到指定位置，如果指定位置不能显示，插入点将归0
 lp：行
 cp：列
-****************************/
+******************************************************/
 void LcdMovePointer(uint8 lp,uint8 cp);
+/******************************************************
+从LCD指定位置开始显示字符串
+lc：起始位置
+s ：要显示字符串
+******************************************************/
 void LCDShowStringAt(uint8 lc,char *s);
 /*
 * Clear the display.
 */
-#define lcd_Clear()	hd44780_outcmd(HD44780_CLR)
+#define LCDClear()	hd44780_outcmd(HD44780_CLR)
 
 #endif//_LCD_H_

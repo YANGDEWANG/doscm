@@ -29,10 +29,10 @@ int8 CodingsWitchPolling()//return 0=不变；-1=减；1=加//a先高=+
 	static bool aold,bold;	//定义了两个变量用来储蓄上一次调用此方法是编码开关两引脚的电平
 	static bool st;			//定义了一个变量用来储蓄以前是否出现了两个引脚都为高电平的状态
 	int8 tmp = 0;
-	if(CodingsWitch_A&&CodingsWitch_A) st = 1;		//如果两个引脚都为高电平则把st置1
+	if(CodingsWitch_A&&CodingsWitch_B) st = 1;		//如果两个引脚都为高电平则把st置1
 	if(st)					//如果st为1执行下面的步骤
 	{
-		if(CodingsWitch_A==0&&CodingsWitch_A==0)		//如果当前编码开关的两个引脚都为底电平执行下面的步骤
+		if(CodingsWitch_A==0&&CodingsWitch_B==0)		//如果当前编码开关的两个引脚都为底电平执行下面的步骤
 		{
 			if(bold)		//如果上一次调用时编码开关b引脚为高说明编码开关在向加大的方向转
 			{
@@ -47,6 +47,6 @@ int8 CodingsWitchPolling()//return 0=不变；-1=减；1=加//a先高=+
 		}
 	}
 	aold = CodingsWitch_A;				//储蓄a到aold
-	bold = CodingsWitch_A;				//储蓄b到bold
+	bold = CodingsWitch_B;				//储蓄b到bold
 	return tmp;				//返回 0=不变；-1=减；1=加
 }

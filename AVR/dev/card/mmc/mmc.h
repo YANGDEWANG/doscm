@@ -42,6 +42,8 @@ typedef struct MMC_VOLUME_INFO
 	uint16   size_MB;
 	uint8   sector_multiply;
 	uint16   sector_count;
+	uint8	BlockLengthPower2;//BlockLength=2µÄBlockLengthPower2´Î·½
+	uint32	Size;
 	uint8   name[6];
 } VOLUME_INFO_TYPE; 
 
@@ -138,7 +140,7 @@ uint8 Write_Command_MMC();
 uint8 Read_CSD_MMC(uint8 *Buffer);
 uint8 Read_CID_MMC(uint8 *Buffer);
 uint8 MMC_Start_Read_Sector(uint32 sector);
-void MMCGetVolumeInfo(void);
+uint8 MMCGetVolumeInfo(void);
 void MMC_get_data(uint16 Bytes,uint8 *buffer);
 void MMC_get_data_LBA(uint32 lba, uint16 Bytes,uint8 *buffer);
 void MMC_GotoSectorOffset(uint32 LBA,uint16 offset);

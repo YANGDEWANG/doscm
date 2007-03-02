@@ -97,10 +97,10 @@ void polling200ms()
 #endif//POLLING200MS
 void polling500ms()
 {
-//DDRC = 0xff;
-//PORTC = 0;
-//ASSR = 0;
-	//lcd_Clear();
+	//DDRC = 0xff;
+	//PORTC = 0;
+	//ASSR = 0;
+	//LCDClear();
 	//LCDShowStringAt(5,"yangdewang");
 	//	PollingDisplay500ms();
 
@@ -108,15 +108,24 @@ void polling500ms()
 #ifdef POLLING1000MS
 void polling1000ms()
 {
+	LCDClear();
 	time++;
 	showTime();
 	bbONTime(8);
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 	if(haveCard)
 	{
-		MMCGetVolumeInfo();
-		ToStringWithU(stringbuff,mmc_info.size_MB);
-		LCDShowStringAt(16,stringbuff);
+		if(MMCGetVolumeInfo()!=0)
+		{
+			haveCard=false;
+		}
+		else
+		{
+			//uint8 mb=	ToStringWithU(stringbuff,mmc_info.Size);
+			//stringbuff[mb++]='M';
+			//stringbuff[mb++]='B';stringbuff[mb++]=0;
+			//LCDShowStringAt(16,stringbuff);
+		}
 	}
 	else
 	{
@@ -127,7 +136,7 @@ void polling1000ms()
 		else
 		{
 			haveCard=false;
-LCDShowStringAt(16,"NO CARD");
+			LCDShowStringAt(16,"NO CARD");
 		}
 	}
 	/*if(UserEventExitCount<MaxUserEventCountDown)
@@ -151,7 +160,7 @@ static void iniPoll()
 	SPIFlashErasureAll();
 	//do
 	//{
-SPIFlashRead(UsartBuffer,0,0);
+	SPIFlashRead(UsartBuffer,0,0);
 
 	SPIFlashPageProgram(UsartBuffer,0);
 	SPIFlashAddress+=256;

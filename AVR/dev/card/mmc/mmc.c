@@ -98,7 +98,7 @@ uint8 MMCInit(void)
 	{ //retry 200 times to send CMD0 command 
 		temp=Write_Command_MMC();
 		retry++;
-		if(retry==200) 
+		if(retry==10) 
 		{ //time out
 			return(INIT_CMD0_ERROR);//CMD0 Error!
 		}
@@ -113,7 +113,7 @@ uint8 MMCInit(void)
 	{ //retry 100 times to send CMD1 command 
 		temp=Write_Command_MMC();
 		retry++;
-		if(retry==100) 
+		if(retry==10) 
 		{ //time out
 			return(INIT_CMD1_ERROR);//CMD1 Error!
 		}
@@ -131,41 +131,59 @@ uint8 MMCInit(void)
 // 	size of the card in MB ( ret * 1024^2) == bytes
 // 	sector count and multiplier MB are in u08 == C_SIZE / (2^(9-C_SIZE_MULT))
 // 	name of the media 
-void MMCGetVolumeInfo(void)
+#include <lcd.h>
+char stringbuff[16];
+uint8 MMCGetVolumeInfo(void)
 //****************************************************************************
 {   
 	//uint8 i;
-
+	uint8 ret;
+	union mmc_csd re;
 	// read the CSD register
-	Read_CSD_MMC(sectorBuffer);
-	// get the C_SIZE value. bits [73:62] of dat
-	// [73:72] == sectorBuffer[6] && 0x03
-	// [71:64] == sectorBuffer[7]
-	// [63:62] == sectorBuffer[8] && 0xc0
-	mmc_info.sector_count = sectorBuffer[6] & 0x03;
-	mmc_info.sector_count <<= 8;
-	mmc_info.sector_count += sectorBuffer[7];
-	mmc_info.sector_count <<= 2;
-	mmc_info.sector_count += (sectorBuffer[8] & 0xc0) >> 6;
+	ret = Read_CSD_MMC(re.dat);
+	if(ret!=0)return ret;
+	mmc_info.BlockLengthPower2=re.mmc_csd_file.READ_BL_LEN;
+	mmc_info.Size = ((uint32)(
+		((uint16)re.mmc_csd_file.C_SIZE_H<<10)
+		+((uint16)re.mmc_csd_file.C_SIZE_M<2)
+		+re.mmc_csd_file.C_SIZE_L))
+		<<
+		(mmc_info.BlockLengthPower2
+		+(re.mmc_csd_file.C_SIZE_MULT_H<<1|re.mmc_csd_file.C_SIZE_MULT_L)
+		+2);
+	mmc_info.size_MB=mmc_info.Size>>20;
+	ToStringWithU(stringbuff,mmc_info.size_MB);
+	LCDShowStringAt(16,stringbuff);
+	//// get the C_SIZE value. bits [73:62] of dat
+	//// [73:72] == sectorBuffer[6] && 0x03
+	//// [71:64] == sectorBuffer[7]
+	//// [63:62] == sectorBuffer[8] && 0xc0
+	//mmc_info.sector_count = sectorBuffer[6] & 0x03;
+	//mmc_info.sector_count <<= 8;
+	//mmc_info.sector_count += sectorBuffer[7];
+	//mmc_info.sector_count <<= 2;
+	//mmc_info.sector_count += (sectorBuffer[8] & 0xc0) >> 6;
 
-	// get the val for C_SIZE_MULT. bits [49:47] of sectorBuffer
-	// [49:48] == sectorBuffer[5] && 0x03
-	// [47]    == sectorBuffer[4] && 0x80
-	mmc_info.sector_multiply = sectorBuffer[9] & 0x03;
-	mmc_info.sector_multiply <<= 1;
-	mmc_info.sector_multiply += (sectorBuffer[10] & 0x80) >> 7;
+	//// get the val for C_SIZE_MULT. bits [49:47] of sectorBuffer
+	//// [49:48] == sectorBuffer[5] && 0x03
+	//// [47]    == sectorBuffer[4] && 0x80
+	//mmc_info.sector_multiply = sectorBuffer[9] & 0x03;
+	//mmc_info.sector_multiply <<= 1;
+	//mmc_info.sector_multiply += (sectorBuffer[10] & 0x80) >> 7;
 
-	// work out the MBs
-	// mega bytes in u08 == C_SIZE / (2^(9-C_SIZE_MULT))
-	mmc_info.size_MB = mmc_info.sector_count >> (9-mmc_info.sector_multiply);
-	// get the name of the card
-	Read_CID_MMC(sectorBuffer);
+	//// work out the MBs
+	//// mega bytes in u08 == C_SIZE / (2^(9-C_SIZE_MULT))
+	//mmc_info.size_MB = mmc_info.sector_count >> (9-mmc_info.sector_multiply);
+	//// get the name of the card
+	ret = Read_CID_MMC(sectorBuffer);
+	if(ret!=0)return ret;
 	mmc_info.name[0] = sectorBuffer[3];
 	mmc_info.name[1] = sectorBuffer[4];
 	mmc_info.name[2] = sectorBuffer[5];
 	mmc_info.name[3] = sectorBuffer[6];
 	mmc_info.name[4] = sectorBuffer[7];
 	mmc_info.name[5] = 0x00; //end flag
+	return 0;
 	/*----------------------------------------------------------
 	LCDclrscr();
 	//Print Product name on lcd
@@ -298,7 +316,7 @@ uint8 MMC_write_sector(uint32 addr,uint8 *Buffer)
 	{  //Retry 100 times to send command.
 		tmp=Write_Command_MMC();
 		retry++;
-		if(retry==100) 
+		if(retry==10) 
 		{ 
 			return(tmp); //send commamd Error!
 		}
@@ -356,7 +374,7 @@ uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes)
 	{  //Retry 100 times to send command.
 		temp=Write_Command_MMC();
 		retry++;
-		if(retry==100) 
+		if(retry==10) 
 		{
 			return(READ_BLOCK_ERROR); //block write Error!
 		}
@@ -364,7 +382,15 @@ uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes)
 	while(temp!=0); 
 
 	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
-	while (Read_Byte_MMC() != 0xfe){};
+	retry=0;
+	while (Read_Byte_MMC() != 0xfe)
+	{
+		retry++;
+		if(retry==100) 
+		{
+			return(READ_BLOCK_ERROR); //block write Error!
+		}
+	};
 
 	//Write blocks(normal 512Bytes) to MMC/SD-Card
 	for (i=0;i<Bytes;i++)
@@ -475,7 +501,7 @@ uint8 MMC_Start_Read_Sector(uint32 sector)
 	{  //Retry 100 times to send command.
 		temp=Write_Command_MMC();
 		retry++;
-		if(retry==100) 
+		if(retry==10) 
 		{
 			return(READ_BLOCK_ERROR); //block write Error!
 		}
