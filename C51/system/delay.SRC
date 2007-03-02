@@ -1,0 +1,237 @@
+; ..\..\system\delay.SRC generated from: ..\..\system\delay.c
+; COMPILER INVOKED BY:
+;        G:\Keil\C51\BIN\C51.EXE ..\..\system\delay.c ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE ORDER INCDIR(.\cfg;..\..\cfg;..\..\dev;..\..\system) DEBUG OBJECTEXTEND PRINT(.\debug\delay.lst) OBJECT(.\debug\delay.obj)
+
+$NOMOD51
+
+NAME	DELAY
+
+P0	DATA	080H
+SP	DATA	081H
+DPL	DATA	082H
+DPH	DATA	083H
+PCON	DATA	087H
+TCON	DATA	088H
+TMOD	DATA	089H
+TL0	DATA	08AH
+TL1	DATA	08BH
+TH0	DATA	08CH
+TH1	DATA	08DH
+P1	DATA	090H
+SCON	DATA	098H
+SBUF	DATA	099H
+P2	DATA	0A0H
+IE	DATA	0A8H
+P3	DATA	0B0H
+IP	DATA	0B8H
+T2CON	DATA	0C8H
+T2MOD	DATA	0C9H
+RCAP2L	DATA	0CAH
+RCAP2H	DATA	0CBH
+TL2	DATA	0CCH
+TH2	DATA	0CDH
+PSW	DATA	0D0H
+ACC	DATA	0E0H
+B	DATA	0F0H
+P0_0	BIT	080H.0
+P0_1	BIT	080H.1
+P0_2	BIT	080H.2
+P0_3	BIT	080H.3
+P0_4	BIT	080H.4
+P0_5	BIT	080H.5
+P0_6	BIT	080H.6
+P0_7	BIT	080H.7
+IT0	BIT	088H.0
+IE0	BIT	088H.1
+IT1	BIT	088H.2
+IE1	BIT	088H.3
+TR0	BIT	088H.4
+TF0	BIT	088H.5
+TR1	BIT	088H.6
+TF1	BIT	088H.7
+P1_0	BIT	090H.0
+P1_1	BIT	090H.1
+P1_2	BIT	090H.2
+P1_3	BIT	090H.3
+P1_4	BIT	090H.4
+P1_5	BIT	090H.5
+P1_6	BIT	090H.6
+P1_7	BIT	090H.7
+T2	BIT	090H.0
+T2EX	BIT	090H.1
+RI	BIT	098H.0
+TI	BIT	098H.1
+RB8	BIT	098H.2
+TB8	BIT	098H.3
+REN	BIT	098H.4
+SM2	BIT	098H.5
+SM1	BIT	098H.6
+SM0	BIT	098H.7
+P2_0	BIT	0A0H.0
+P2_1	BIT	0A0H.1
+P2_2	BIT	0A0H.2
+P2_3	BIT	0A0H.3
+P2_4	BIT	0A0H.4
+P2_5	BIT	0A0H.5
+P2_6	BIT	0A0H.6
+P2_7	BIT	0A0H.7
+EX0	BIT	0A8H.0
+ET0	BIT	0A8H.1
+EX1	BIT	0A8H.2
+ET1	BIT	0A8H.3
+ES	BIT	0A8H.4
+ET2	BIT	0A8H.5
+EA	BIT	0A8H.7
+P3_0	BIT	0B0H.0
+P3_1	BIT	0B0H.1
+P3_2	BIT	0B0H.2
+P3_3	BIT	0B0H.3
+P3_4	BIT	0B0H.4
+P3_5	BIT	0B0H.5
+P3_6	BIT	0B0H.6
+P3_7	BIT	0B0H.7
+RXD	BIT	0B0H.0
+TXD	BIT	0B0H.1
+INT0	BIT	0B0H.2
+INT1	BIT	0B0H.3
+T0	BIT	0B0H.4
+T1	BIT	0B0H.5
+WR	BIT	0B0H.6
+RD	BIT	0B0H.7
+PX0	BIT	0B8H.0
+PT0	BIT	0B8H.1
+PX1	BIT	0B8H.2
+PT1	BIT	0B8H.3
+PS	BIT	0B8H.4
+PT2	BIT	0B8H.5
+CP_RL2	BIT	0C8H.0
+C_T2	BIT	0C8H.1
+TR2	BIT	0C8H.2
+EXEN2	BIT	0C8H.3
+TCLK	BIT	0C8H.4
+RCLK	BIT	0C8H.5
+EXF2	BIT	0C8H.6
+TF2	BIT	0C8H.7
+P	BIT	0D0H.0
+FL	BIT	0D0H.1
+OV	BIT	0D0H.2
+RS0	BIT	0D0H.3
+RS1	BIT	0D0H.4
+F0	BIT	0D0H.5
+AC	BIT	0D0H.6
+CY	BIT	0D0H.7
+LATCH_M62446	BIT	0A0H.2
+JJ	BIT	0A0H.3
+?PR?_delay_ms?DELAY  SEGMENT CODE INBLOCK 
+?DT?_delay_ms?DELAY  SEGMENT DATA OVERLAYABLE 
+?PR?_delay_s?DELAY   SEGMENT CODE INBLOCK 
+	PUBLIC	_delay_s
+	PUBLIC	_delay_ms
+
+	RSEG  ?DT?_delay_ms?DELAY
+?_delay_ms?BYTE:
+      us100?041:   DS   1
+; #pragma SRC
+; #include <global.h>
+; #include "delay.h"
+; //_UINT8 data delay_C1;
+; //_UINT8 data delay_C2;
+; /*
+; —”≥Ÿms ∫¡√Î
+; ms£∫
+; ∫¡√Î ˝
+; */
+; void delay_ms(UINT8 ms)
+
+	RSEG  ?PR?_delay_ms?DELAY
+_delay_ms:
+	USING	0
+			; SOURCE LINE # 11
+;---- Variable 'de?042' assigned to Register 'R6' ----
+;---- Variable 'ms?040' assigned to Register 'R7' ----
+; {
+			; SOURCE LINE # 12
+?C0001:
+; 	UINT8 data us100,de;
+; 	while(ms--)
+			; SOURCE LINE # 14
+	MOV  	R5,AR7
+	DEC  	R7
+	MOV  	A,R5
+	JZ   	?C0005
+; 	{
+			; SOURCE LINE # 15
+; 		us100 = 10;
+			; SOURCE LINE # 16
+	MOV  	us100?041,#0AH
+; 		_delay_100us(de,1);
+			; SOURCE LINE # 17
+	MOV  	R6,#032H
+?_delay_ms?_delay_loopFdelay_us100us1:
+	DEC  	R6
+	MOV  	A,R6
+	JZ   	?C0001
+	SJMP 	?_delay_ms?_delay_loopFdelay_us100us1
+; #pragma asm
+; #pragma endasm
+; 	}
+			; SOURCE LINE # 20
+; }
+			; SOURCE LINE # 21
+?C0005:
+	RET  	
+; END OF _delay_ms
+
+; /*
+; —”≥Ÿs √Î
+; s£∫
+; √Î ˝
+; */
+; void delay_s(UINT8 s)
+
+	RSEG  ?PR?_delay_s?DELAY
+_delay_s:
+	USING	0
+			; SOURCE LINE # 27
+;---- Variable 's?143' assigned to Register 'R4' ----
+;---- Variable 'ms250?144' assigned to Register 'R3' ----
+	MOV  	R4,AR7
+; {
+			; SOURCE LINE # 28
+?C0006:
+; 	UINT8 ms250;
+; 	while(s--)
+			; SOURCE LINE # 30
+	MOV  	R7,AR4
+	DEC  	R4
+	MOV  	A,R7
+	JZ   	?C0010
+; 	{
+			; SOURCE LINE # 31
+; 		ms250 = 4;
+			; SOURCE LINE # 32
+	MOV  	R3,#04H
+?C0008:
+; 		while(ms250--)
+			; SOURCE LINE # 33
+	MOV  	R7,AR3
+	DEC  	R3
+	MOV  	A,R7
+	JZ   	?C0006
+; 		{
+			; SOURCE LINE # 34
+; 			delay_ms(250);
+			; SOURCE LINE # 35
+	MOV  	R7,#0FAH
+	LCALL	_delay_ms
+; 		}
+			; SOURCE LINE # 36
+	SJMP 	?C0008
+; 	}
+			; SOURCE LINE # 37
+; }			; SOURCE LINE # 38
+?C0010:
+	RET  	
+; END OF _delay_s
+
+	END
