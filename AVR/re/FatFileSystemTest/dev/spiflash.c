@@ -189,7 +189,7 @@ uint8 SPIFlashReadStatusRegister(uint8 devC)
 static void WaitFlashIdel(uint8 devC)
 {
 	//bit_is_clear
-	while(SPIFlashReadStatusRegister(devC)&1)
+//	while(SPIFlashReadStatusRegister(devC)&1)
 	{
 		//todo:chaoshi
 	}

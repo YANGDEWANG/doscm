@@ -59,9 +59,10 @@ struct mmc_cid {
 };
 union mmc_csd
 {
+#if 0
 	struct 
 	{
-uint8	:1;//not used, always ¡¯1¡¯ [0:0]
+		uint8	n1:1;//not used, always ¡¯1¡¯ [0:0]
 		uint8	CRC:7;// CRC 7 R/W/E [7:1]
 		uint8	ECC :2;//ECC code  R/W/E [9:8]
 		uint8	FILE_FORMAT :2;//File format  R/W [11:10]
@@ -70,11 +71,11 @@ uint8	:1;//not used, always ¡¯1¡¯ [0:0]
 		uint8	COPY :1;//copy flag (OTP) R/W [14:14]
 		uint8	FILE_FORMAT_GRP :1;//File format group  R/W [15:15]
 		uint8	CONTENT_PROT_APP :1;//Content protection application  R [16:16]
-uint8	:4;//Reserved -  R [20:17]
+		uint8	n2:4;//Reserved -  R [20:17]
 		uint8	WRITE_BL_PARTIAL :1;//partial blocks for write allowed  R [21:21]
 		//uint8	WRITE_BL_LEN :4;//max. write data block length  R [25:22]
-		uint8	WRITE_BL_PARTIAL_L :2;
-		uint8	WRITE_BL_PARTIAL_H :2;
+		uint8	WRITE_BL_LEN_L :2;
+		uint8	WRITE_BL_LEN_H :2;
 		uint8	R2W_FACTOR :3;//write speed factor  R [28:26]
 		uint8	DEFAULT_ECC :2;//manufacturer default ECC  R [30:29]
 		uint8	WP_GRP_ENABLE :1;//write protect group enable  R [31:31]
@@ -94,7 +95,7 @@ uint8	:4;//Reserved -  R [20:17]
 		uint8	C_SIZE_L :2;
 		uint8	C_SIZE_M;
 		uint8	C_SIZE_H :2;
-uint8	:2;//reserved -  R [75:74]
+		uint8	n3:2;//reserved -  R [75:74]
 		uint8	DSR_IMP :1;//DSR implemented  R [76:76]
 		uint8	READ_BLK_MISALIGN :1;//read block misalignment  R [77:77]
 		uint8	WRITE_BLK_MISALIGN :1;//write block misalignment  R [78:78]
@@ -106,10 +107,79 @@ uint8	:2;//reserved -  R [75:74]
 		uint8	TRAN_SPEED :8;//max. data transfer rate  R [103:96]
 		uint8	NSAC :8;// R [111:104]
 		uint8	TAAC :8;//data read access-time-1  R [119:112]
-uint8	:2;//reserved -  R [121:120]
+		uint8	n4:2;//reserved -  R [121:120]
 		uint8	SPEC_VERS :4;//System specification version  R [125:122]
 		uint8	CSD_STRUCTURE :2;//CSD structure  R [127:126]
 	}mmc_csd_file;
+#else
+	struct 
+	{
+		uint8	n4:2;//reserved -  R [121:120]
+		uint8	SPEC_VERS :4;//System specification version  R [125:122]
+		uint8	CSD_STRUCTURE :2;//CSD structure  R [127:126]
+
+		uint8	TAAC :8;//data read access-time-1  R [119:112]
+
+		uint8	NSAC :8;// R [111:104]
+
+		uint8	TRAN_SPEED :8;//max. data transfer rate  R [103:96]
+
+		//uint16	CCC :12;//card command classes  R [95:84]
+		uint8	CCC_H;
+
+		uint8	READ_BL_LEN :4;//max. read data block length  R [83:80]
+		uint8	CCC_L :4;
+
+		uint8	C_SIZE_H :2;
+		uint8	n3:2;//reserved -  R [75:74]
+		uint8	DSR_IMP :1;//DSR implemented  R [76:76]
+		uint8	READ_BLK_MISALIGN :1;//read block misalignment  R [77:77]
+		uint8	WRITE_BLK_MISALIGN :1;//write block misalignment  R [78:78]
+		uint8	READ_BL_PARTIAL :1;//partial blocks for read allowed  R [79:79]
+
+		uint8	C_SIZE_M;
+
+		uint8	VDD_R_CURR_MAX :3;//max. read current @VDD max  R [58:56]
+		uint8	VDD_R_CURR_MIN :3;//max. read current @VDD min  R [61:59]
+		//uint16	C_SIZE :12;//device size  R [73:62]
+		uint8	C_SIZE_L :2;
+
+		uint8	C_SIZE_MULT_H :2;
+		uint8	VDD_W_CURR_MAX :3;//max. write current @VDD max  R [52:50]
+		uint8	VDD_W_CURR_MIN :3;//max. write current @VDD min  R [55:53]
+
+		uint8	ERASE_GRP_MULT_H :2;
+		uint8	ERASE_GRP_SIZE :5;//erase group size  R [46:42]
+		//uint8	C_SIZE_MULT :3;//device size multiplier  R [49:47]
+		uint8	C_SIZE_MULT_L :1;
+
+		uint8	WP_GRP_SIZE :5;//write protect group size  R [36:32]
+		//uint8	ERASE_GRP_MULT :5;//erase group size multiplier R [41:37]
+		uint8	ERASE_GRP_MULT_L :3;
+
+		uint8	WRITE_BL_LEN_H :2;
+		uint8	R2W_FACTOR :3;//write speed factor  R [28:26]
+		uint8	DEFAULT_ECC :2;//manufacturer default ECC  R [30:29]
+		uint8	WP_GRP_ENABLE :1;//write protect group enable  R [31:31]
+
+		uint8	CONTENT_PROT_APP :1;//Content protection application  R [16:16]
+		uint8	n2:4;//Reserved -  R [20:17]
+		uint8	WRITE_BL_PARTIAL :1;//partial blocks for write allowed  R [21:21]
+		//uint8	WRITE_BL_LEN :4;//max. write data block length  R [25:22]
+		uint8	WRITE_BL_LEN_L :2;
+
+		uint8	ECC :2;//ECC code  R/W/E [9:8]
+		uint8	FILE_FORMAT :2;//File format  R/W [11:10]
+		uint8	TMP_WRITE_PROTECT :1;//temporary write protection  R/W/E [12:12]
+		uint8	PERM_WRITE_PROTECT :1;//permanent write protection  R/W [13:13]
+		uint8	COPY :1;//copy flag (OTP) R/W [14:14]
+		uint8	FILE_FORMAT_GRP :1;//File format group  R/W [15:15]
+
+		uint8	n1:1;//not used, always ¡¯1¡¯ [0:0]
+		uint8	CRC:7;// CRC 7 R/W/E [7:1]
+	}mmc_csd_file;
+
+#endif
 	uint8 dat[16];
 };
 

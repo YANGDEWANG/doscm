@@ -30,7 +30,7 @@ void IniDev()
 	//IniIrdev();
 	//InitUSART(3);
 	lcd_init();
-	InitUSART(12);//38.4
+	//InitUSART(12);//38.4
 	ControlClock(true);
 	//lcd_init();
 	//while(1)

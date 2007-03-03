@@ -151,6 +151,8 @@ void polling1000ms()
 #endif//POLLING1000MS
 static void iniPoll()
 {
+	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
+while(MMCInit());
 	showTime();
 	LCDShowStringAt(16,"HELLO");
 	SPIFlashSetManufacturer(SFM_Eon);
