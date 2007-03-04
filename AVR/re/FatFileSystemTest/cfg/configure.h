@@ -33,8 +33,8 @@
 //定义使用固定宽度tostring时不足位的填充字符默认填'0'
 #define DWSTD_TOSTRING_ADDCHAR '0'
 //定义DWSTD使用的类型
-#define dwstdint uint16
-#define dwstdsint int16
+#define dwstdint uint32
+#define dwstdsint int32
 //------------dwstd 配置结束----------------//
 
 //--------------------------SPI口配置-------------------------------//

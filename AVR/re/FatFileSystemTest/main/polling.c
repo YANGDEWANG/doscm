@@ -106,6 +106,7 @@ void polling500ms()
 
 }
 #ifdef POLLING1000MS
+uint8 buf[256];
 void polling1000ms()
 {
 	LCDClear();
@@ -115,21 +116,31 @@ void polling1000ms()
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 	if(haveCard)
 	{
-		if(MMCGetVolumeInfo()!=0)
+		if(!MMCGetVolumeInfo())
 		{
 			haveCard=false;
 		}
 		else
 		{
-			//uint8 mb=	ToStringWithU(stringbuff,mmc_info.Size);
+			LCDClear();
+			uint8 mb=	ToStringWithU(stringbuff,mmc_info.Size);
 			//stringbuff[mb++]='M';
-			//stringbuff[mb++]='B';stringbuff[mb++]=0;
-			//LCDShowStringAt(16,stringbuff);
+			stringbuff[mb++]='B';stringbuff[mb++]=0;
+			LCDShowStringAt(16,stringbuff);
+			LCDShowStringAt(0,mmc_info.Name);
+			ToStringWithU(stringbuff,mmc_info.SizeMB);
+			LCDShowStringAt(8,stringbuff);
+			uint16 i=0;
+			for(;i<512;i++)
+			{
+				MMCReadSector(i,buf);
+			}
+			
 		}
 	}
 	else
 	{
-		if(MMCInit()==0)
+		if(MMCInit())
 		{
 			haveCard = true;
 		}
@@ -152,7 +163,7 @@ void polling1000ms()
 static void iniPoll()
 {
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
-while(MMCInit());
+while(!MMCInit());
 	showTime();
 	LCDShowStringAt(16,"HELLO");
 	SPIFlashSetManufacturer(SFM_Eon);
