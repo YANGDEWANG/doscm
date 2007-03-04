@@ -39,12 +39,10 @@
 // this structure holds info on the MMC card currently inserted 
 typedef struct MMC_VOLUME_INFO
 { //MMC/SD Card info
-	uint16   size_MB;
-	uint8   sector_multiply;
-	uint16   sector_count;
-	uint8	BlockLengthPower2;//BlockLength=2的BlockLengthPower2次方
+	uint16	SizeMB;
+	uint32	SectorCount;
 	uint32	Size;
-	uint8   name[6];
+	uint8	Name[6];
 } VOLUME_INFO_TYPE; 
 
 struct mmc_cid {
@@ -194,7 +192,6 @@ extern	uint8    Init_Flag;    //Set it to 1 when Init is processing.
 //---------------------------------------------------------------
 // Prototypes
 //---------------------------------------------------------------
-void MMC_Port_Init(void);
 
 uint8 Read_Byte_MMC(void);
 //uint8 Read_Byte_MMC_Long(void);
@@ -202,15 +199,25 @@ uint8 Read_Byte_MMC(void);
 void Write_Byte_MMC(uint8 value);
 //void Write_Byte_MMC_Long(uint8 value);
 
-uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes);
-uint8 MMCInit(void);
-uint8 MMC_write_sector(uint32 addr,uint8 *Buffer);
-//uint8 MMC_read_sector(uint32 addr,uint8 *Buffer);
-uint8 Write_Command_MMC();
-uint8 Read_CSD_MMC(uint8 *Buffer);
-uint8 Read_CID_MMC(uint8 *Buffer);
-uint8 MMC_Start_Read_Sector(uint32 sector);
-uint8 MMCGetVolumeInfo(void);
+bool MMC_Read_Block(uint8 *Buffer,uint16 Bytes);
+bool MMCInit(void);
+/****************************************************************************
+写扇区（512字节）
+addr  ：扇区编号
+Buffer：数据储蓄区
+****************************************************************************/
+bool MMCWriteSector(uint32 addr,uint8 *Buffer);
+/****************************************************************************
+读取块
+Buffer：数据储蓄区
+Bytes ：块字节数
+****************************************************************************/
+bool MMCReadBlock(uint8 *Buffer,uint16 Bytes);
+bool MMCWriteCommand(uint8 cmd,uint32 arg,uint8 succeed);
+bool Read_CSD_MMC(uint8 *Buffer);
+bool Read_CID_MMC(uint8 *Buffer);
+bool MMC_Start_Read_Sector(uint32 sector);
+bool MMCGetVolumeInfo(void);
 void MMC_get_data(uint16 Bytes,uint8 *buffer);
 void MMC_get_data_LBA(uint32 lba, uint16 Bytes,uint8 *buffer);
 void MMC_GotoSectorOffset(uint32 LBA,uint16 offset);
@@ -224,7 +231,6 @@ void MMC_LBA_Close(void);
 
 #define nop() asm("nop"); //asm nop defined in CVAVR
 
-#define delay_us_8_ asm("nop")
 #endif //_MMC_H_
 
 

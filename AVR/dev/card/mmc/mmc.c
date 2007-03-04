@@ -11,7 +11,8 @@
 //CopyRight (c) 2005 ZhengYanbo
 //Email: Datazyb_007@163.com
 ****************************************************************************************/
-#include "global.h"
+#include <global.h>
+#include <util\delay.h>
 #include "mmc.h"
 #include "protocol.h"
 #include "spi.h"
@@ -29,23 +30,18 @@
 uint16	readPos=0;
 uint8	sectorPos=0;
 uint8   LBA_Opened=0; //Set to 1 when a sector is opened.
-uint8 mmc_cmd[6];
 VOLUME_INFO_TYPE mmc_info;
 //uint8   Init_Flag;    //Set it to 1 when Init is processing.
 //---------------------------------------------------------------
 //加载块地址到mmc_cmd
-void IniBlockAdd(uint32 add)
-{
-	b32 baddr;
-	baddr.b32_1 = add << BLOCK_SIZE_EX2; //addr = addr * 512 
-	mmc_cmd[1] = baddr.b8_4.b8_4;
-	mmc_cmd[2] = baddr.b8_4.b8_3;
-	mmc_cmd[3] = baddr.b8_4.b8_2;
-}
-void inline clr_mmc_cmd()
-{
-	memset(mmc_cmd,0,sizeof(mmc_cmd));
-}
+//void IniBlockAdd(uint32 add)
+//{
+//	b32 baddr;
+//	baddr.b32_1 = add << BLOCK_SIZE_EX2; //addr = addr * 512 
+//	mmc_cmd[1] = baddr.b8_4.b8_4;
+//	mmc_cmd[2] = baddr.b8_4.b8_3;
+//	mmc_cmd[3] = baddr.b8_4.b8_2;
+//}
 #if 0
 //****************************************************************************
 // Port Init
@@ -66,66 +62,34 @@ void inline clr_mmc_cmd()
 #endif
 //****************************************************************************
 //Routine for Init MMC/SD card(SPI-MODE)
-uint8 MMCInit(void)
+bool MMCInit(void)
 //****************************************************************************
 {  
-	uint8 retry,temp;
 	uint8 i;
 	//uint8 CMD[] = {0x40,0x00,0x00,0x00,0x00,0x95};
 	sbi(DDR_MMC,MMC_CS); //Set Pin MMC_Chip_Select as Output
 	sbi(PORT_MMC,MMC_CS);                        //Set MMC_Chip_Select to High,MMC/SD Invalid.
-
-	//MMC_Port_Init(); //Init SPI port  
-
-	//for(i=0;i<200;i++) //Wait MMC/SD ready...
-	//{
-	//	asm("nop");
-	//}
-
-	//Init_Flag=1; //Set the init flag
-
+	_delay_us(250);  //Wait MMC/SD ready...
 	for (i=0;i<0x0f;i++) 
 	{
 		Write_Byte_MMC(0xff); //send 74 clock at least!!!
 	}
-
 	//Send Command CMD0 to MMC/SD Card
-	clr_mmc_cmd();
-	mmc_cmd[0]=0x40;
-	mmc_cmd[5]=0x95;
-	retry=0;
-	do
-	{ //retry 200 times to send CMD0 command 
-		temp=Write_Command_MMC();
-		retry++;
-		if(retry==10) 
-		{ //time out
-			MMC_Disable();  //set MMC_Chip_Select to high
-			return(INIT_CMD0_ERROR);//CMD0 Error!
-		}
-	} 
-	while(temp!=1);
+	//retry 200 times to send CMD0 command 
+	if(MMCWriteCommand(MMC_GO_IDLE_STATE,0,1)!=1)
+	{
+		MMC_Disable();  //set MMC_Chip_Select to high
+		return(false);//CMD0 Error!
+	}
 
 	//Send Command CMD1 to MMC/SD-Card
-	mmc_cmd[0] = 0x41; //Command 1
-	mmc_cmd[5] = 0xFF;
-	retry=0;
-	do
-	{ //retry 100 times to send CMD1 command 
-		temp=Write_Command_MMC();
-		retry++;
-		if(retry==100) 
-		{ //time out
-			MMC_Disable();  //set MMC_Chip_Select to high
-			return(INIT_CMD1_ERROR);//CMD1 Error!
-		}
-	} 
-	while(temp!=0);
-
-	//Init_Flag=0; //Init is completed,clear the flag 
-
+	if(MMCWriteCommand(MMC_SEND_OP_COND,0,0)!=0)
+	{
+		MMC_Disable();  //set MMC_Chip_Select to high
+		return(false);//CMD0 Error!
+	}
 	MMC_Disable();  //set MMC_Chip_Select to high 
-	return(0); //All commands have been taken.
+	return(true); //All commands have been taken.
 } 
 
 //****************************************************************************
@@ -133,200 +97,89 @@ uint8 MMCInit(void)
 // 	size of the card in MB ( ret * 1024^2) == bytes
 // 	sector count and multiplier MB are in u08 == C_SIZE / (2^(9-C_SIZE_MULT))
 // 	name of the media 
-#include <lcd.h>
-char stringbuff[16];
-uint32 cSize;
-uint8 mCSize;
-uint8 MMCGetVolumeInfo(void)
-//****************************************************************************
+//#include <lcd.h>
+//char stringbuff[16];
+bool MMCGetVolumeInfo(void)
 {   
-	//uint8 i;
-	uint8 ret;
 	union mmc_csd re;
 	// read the CSD register
-	ret = Read_CSD_MMC(re.dat);
-	if(ret!=0)return ret;
-	mmc_info.BlockLengthPower2=re.mmc_csd_file.READ_BL_LEN;
-	cSize = ((uint16)re.mmc_csd_file.C_SIZE_H<<10)
-		+((uint16)re.mmc_csd_file.C_SIZE_M<2)
-		+re.mmc_csd_file.C_SIZE_L;
-	mCSize = mmc_info.BlockLengthPower2
+	if(!Read_CSD_MMC(re.dat))
+		return false;
+	uint8 prw2 = re.mmc_csd_file.READ_BL_LEN
 		+(re.mmc_csd_file.C_SIZE_MULT_H<<1|re.mmc_csd_file.C_SIZE_MULT_L)
 		+2;
-	mmc_info.Size = (cSize+1)<<mCSize;
-	mmc_info.size_MB=mmc_info.Size>>20;
-	ToStringWithU(stringbuff,mmc_info.size_MB);
-	LCDShowStringAt(16,stringbuff);
-	//// get the C_SIZE value. bits [73:62] of dat
-	//// [73:72] == re.dat[6] && 0x03
-	//// [71:64] == re.dat[7]
-	//// [63:62] == re.dat[8] && 0xc0
-	mmc_info.sector_count = re.dat[6] & 0x03;
-	mmc_info.sector_count <<= 8;
-	mmc_info.sector_count += re.dat[7];
-	mmc_info.sector_count <<= 2;
-	mmc_info.sector_count += (re.dat[8] & 0xc0) >> 6;
-
-	// get the val for C_SIZE_MULT. bits [49:47] of sectorBuffer
-	// [49:48] == sectorBuffer[5] && 0x03
-	// [47]    == sectorBuffer[4] && 0x80
-	mmc_info.sector_multiply = re.dat[9] & 0x03;
-	mmc_info.sector_multiply <<= 1;
-	mmc_info.sector_multiply += (re.dat[10] & 0x80) >> 7;
-
-	// work out the MBs
-	// mega bytes in u08 == C_SIZE / (2^(9-C_SIZE_MULT))
-	mmc_info.size_MB = mmc_info.sector_count >> (9-mmc_info.sector_multiply);
+	mmc_info.Size = ((uint16)re.mmc_csd_file.C_SIZE_H<<10)
+		+((uint16)re.mmc_csd_file.C_SIZE_M<<2)
+		+re.mmc_csd_file.C_SIZE_L
+		+1;
+	mmc_info.Size <<= prw2;
+	mmc_info.SizeMB=mmc_info.Size>>20;
+	mmc_info.SectorCount = mmc_info.Size>>9;
+	//mmc_info.Size = cSize;
+	//mmc_info.Size*=(2<<);
+	//ToStringWithU(stringbuff,mmc_info.SizeMB);
+	//LCDShowStringAt(16,stringbuff);
 	// get the name of the card
-	ret = Read_CID_MMC(re.dat);
-	if(ret!=0)return ret;
-	mmc_info.name[0] = re.dat[3];
-	mmc_info.name[1] = re.dat[4];
-	mmc_info.name[2] = re.dat[5];
-	mmc_info.name[3] = re.dat[6];
-	mmc_info.name[4] = re.dat[7];
-	mmc_info.name[5] = 0x00; //end flag
-	return 0;
-	/*----------------------------------------------------------
-	LCDclrscr();
-	//Print Product name on lcd
-	i=0;
-	writestring("Product:");
-	while((mmc_info.name[i]!=0x00)&&(i<16)) writechar(mmc_info.name[i++]);
-	//Print Card Size(eg:128MB)
-	gotoxy(1,0);
-	writestring("Tot:"); 
-	writeNumber(mmc_info.size_MB); writestring("MB ");
-	//gotoxy(2,0);
-	//writestring("sector_mult:"); writeNumber(mmc_info.sector_multiply);
-	//gotoxy(3,0);
-	//writestring("sect_cnt:"); writeNumber(mmc_info.sector_count);*/
-
+	if(!Read_CID_MMC(re.dat))
+	{
+		return false;
+	}
+	mmc_info.Name[0] = re.dat[3];
+	mmc_info.Name[1] = re.dat[4];
+	mmc_info.Name[2] = re.dat[5];
+	mmc_info.Name[3] = re.dat[6];
+	mmc_info.Name[4] = re.dat[7];
+	mmc_info.Name[5] = 0x00; //end flag
+	return true;
 }
 
 //****************************************************************************
 //Send a Command to MMC/SD-Card
 //Return: the second uint8 of response register of MMC/SD-Card
-uint8 Write_Command_MMC()
+uint8 MMCWriteCommand(uint8 cmd,uint32 arg,uint8 succeed)
 //****************************************************************************
 {
 	uint8 tmp;
-	uint8 retry=0;
-	uint8 i;
-
-	//set MMC_Chip_Select to high (MMC/SD-Card disable) 
-	MMC_Disable();
-	//send 8 Clock Impulse
-	Write_Byte_MMC(0xFF);
-	//set MMC_Chip_Select to low (MMC/SD-Card active)
-	MMC_Enable();
-
-	//send 6 Byte Command to MMC/SD-Card
-	for (i=0;i<0x06;i++) 
-	{ 
-		Write_Byte_MMC(mmc_cmd[i]);
+	uint8 retry=0,retrySendC = 100;
+	do{
+		//send 8 Clock Impulse
+		Write_Byte_MMC(0xFF);
+		//set MMC_Chip_Select to low (MMC/SD-Card active)
+		MMC_Enable();       //SD卡使能
+		Write_Byte_MMC(cmd|0x40);   //送头命令
+		Write_Byte_MMC(arg>>24);
+		Write_Byte_MMC(arg>>16);     //send 6 Byte Command to MMC/SD-Card
+		Write_Byte_MMC(arg>>8);
+		Write_Byte_MMC(arg&0xff);
+		Write_Byte_MMC(0x95);       //仅仅对RESET有效的CRC效验码
+		//get 8 bit response
+		//Read_Byte_MMC(); //read the first byte,ignore it. 
+		do 
+		{  //Only last 8 bit is used here.Read it out. 
+			tmp = Read_Byte_MMC();
+			retry++;
+		}
+		while((tmp==0xff)&&(retry<100));  //当没有收到有效的命令的时候
 	}
-
-	//get 16 bit response
-	Read_Byte_MMC(); //read the first uint8,ignore it. 
-	do 
-	{  //Only last 8 bit is used here.Read it out. 
-		tmp = Read_Byte_MMC();
-		retry++;
-	}
-	while((tmp==0xff)&&(retry<100)); 
+	while(tmp!=succeed&&(--retrySendC));
 	return(tmp);
 }
-#if 0
-//****************************************************************************
-//Routine for reading a uint8 from MMC/SD-Card
-uint8 Read_Byte_MMC(void)
-//****************************************************************************
-{ 
-	uint8 temp=0;
-	uint8 i;
-
-	cbi(MMC_Write,SPI_BUSY); //MMC_BUSY_LED=0;
-	//Software SPI
-	for (i=0; i<8; i++) //MSB First
-	{
-		cbi(MMC_Write,SPI_Clock); //Clock Impuls (Low)
-		if(Init_Flag) delay_us_8_;
-		//read mmc dat out pin
-		if((MMC_Read&(1<<SPI_DI))!=0)
-			temp = (temp << 1) + 1; 
-		else
-			temp = (temp << 1) + 0;
-		sbi(MMC_Write,SPI_Clock); //set Clock Impuls High
-		if(Init_Flag) delay_us_8_;	
-	}
-	sbi(MMC_Write,SPI_BUSY); //MMC_BUSY_LED=1;
-	return (temp);
-}
-
-//****************************************************************************
-//Routine for sending a uint8 to MMC/SD-Card
-void Write_Byte_MMC(uint8 value)
-//****************************************************************************
-{ 
-	uint8 i; 
-
-	cbi(MMC_Write,SPI_BUSY); //MMC_BUSY_LED=0; 
-	//Software SPI
-	for (i=0; i<8; i++) 
-	{  //write a uint8
-		if (((value >> (7-i)) & 0x01)==0x01)
-			sbi(MMC_Write,SPI_DO); //Send bit by bit(MSB First)
-		else
-			cbi(MMC_Write,SPI_DO);
-		cbi(MMC_Write,SPI_Clock); //set Clock Impuls low
-		if(Init_Flag) delay_us_8_; 
-		sbi(MMC_Write,SPI_Clock); //set Clock Impuls High
-		if(Init_Flag) delay_us_8_;     
-	}//write a uint8
-	sbi(MMC_Write,SPI_DO);	//set Output High 
-	sbi(MMC_Write,SPI_BUSY); //MMC_BUSY_LED=1;
-}
-#endif
-//****************************************************************************
-//Routine for writing a Block(512Byte) to MMC/SD-Card
-//Return 0 if sector writing is completed.
-uint8 MMC_write_sector(uint32 addr,uint8 *Buffer)
-//****************************************************************************
+/****************************************************************************
+写扇区（512字节）
+addr  ：扇区编号
+Buffer：数据储蓄区
+****************************************************************************/
+bool MMCWriteSector(uint32 addr,uint8 *Buffer)
 {  
-	uint8 tmp,retry;
+	uint8 tmp;
 	uint16 i;
 	//Command 24 is a writing blocks command for MMC/SD-Card.
-#if 0
-	uint8 CMD[] = {0x58,0x00,0x00,0x00,0x00,0xFF}; 
-
-	asm("cli"); //clear all interrupt.
-
-	addr = addr << 9; //addr = addr * 512 
-	CMD[1] = ((addr & 0xFF000000) >>24 );
-	CMD[2] = ((addr & 0x00FF0000) >>16 );
-	CMD[3] = ((addr & 0x0000FF00) >>8 );
-#else
-	mmc_cmd[0]=0x58;
-	mmc_cmd[4]=0;
-	mmc_cmd[5]=0xFF;
-	IniBlockAdd(addr);
-#endif
-
 	//Send Command CMD24 to MMC/SD-Card (Write 1 Block/512 Bytes)
-	retry=0;
-	do
-	{  //Retry 100 times to send command.
-		tmp=Write_Command_MMC();
-		retry++;
-		if(retry==10) 
-		{ 
-			MMC_Disable();
-			return(tmp); //send commamd Error!
-		}
+	if(MMCWriteCommand(MMC_WRITE_BLOCK,addr << 9,0)!=0)
+	{
+		MMC_Disable();
+		return(false); //send commamd Error!
 	}
-	while(tmp!=0); 
-
 	////Before writing,send 100 clock to MMC/SD-Card
 	//for (i=0;i<100;i++)
 	//{
@@ -352,7 +205,7 @@ uint8 MMC_write_sector(uint32 addr,uint8 *Buffer)
 	if((tmp & 0x1F)!=0x05) // dat block accepted ?
 	{
 		MMC_Disable();
-		return(WRITE_BLOCK_ERROR); //Error!
+		return(false); //Error!
 	}
 	//Wait till MMC/SD-Card is not busy
 	while (Read_Byte_MMC()!=0xff){};
@@ -362,29 +215,15 @@ uint8 MMC_write_sector(uint32 addr,uint8 *Buffer)
 	return(0);
 } 
 
-//****************************************************************************
-//Routine for reading dat Registers of MMC/SD-Card
-//Return 0 if no Error.
-//uint8 MMC_Read_Block(uint8 *CMD,uint8 *Buffer,uint16 Bytes)
-uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes)
-//****************************************************************************
+/****************************************************************************
+读取块
+Buffer：数据储蓄区
+Bytes ：块字节数
+****************************************************************************/
+bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
 {  
 	uint16 i; 
-	uint8 retry,temp;
-
-	//Send Command CMD to MMC/SD-Card
-	retry=0;
-	do
-	{  //Retry 100 times to send command.
-		temp=Write_Command_MMC();
-		retry++;
-		if(retry==10) 
-		{
-			return(READ_BLOCK_ERROR); //block write Error!
-		}
-	}
-	while(temp!=0); 
-
+	uint8 retry;
 	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
 	retry=0;
 	while (Read_Byte_MMC() != 0xfe)
@@ -392,7 +231,8 @@ uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes)
 		retry++;
 		if(retry==100) 
 		{
-			return(READ_BLOCK_ERROR); //block write Error!
+			MMC_Disable();
+			return(false); //block write Error!
 		}
 	};
 
@@ -408,115 +248,98 @@ uint8 MMC_Read_Block(uint8 *Buffer,uint16 Bytes)
 
 	//set MMC_Chip_Select to high (MMC/SD-Card invalid)
 	MMC_Disable();
-	return(0);
+	return(true);
 }
 
-//****************************************************************************
-//Routine for reading Blocks(512Byte) from MMC/SD-Card
-//Return 0 if no Error.
-uint8 MMC_read_sector(uint32 addr,uint8 *Buffer)
-//****************************************************************************
+/****************************************************************************
+读取扇区（512字节）
+addr  ：扇区编号
+Buffer：数据储蓄区
+****************************************************************************/
+uint8 MMCReadSector(uint32 addr,uint8 *Buffer)
 {	
 	//Command 16 is reading Blocks from MMC/SD-Card
 	//uint8 CMD[] = {0x51,0x00,0x00,0x00,0x00,0xFF}; 
-	uint8 temp;
-	asm("cli"); //clear all interrupt.
-	//Address conversation(logic block address-->uint8 address) 
-
-#if 0
-	addr = addr << 9; //addr = addr * 512 
-	CMD[1] = ((addr & 0xFF000000) >>24 );
-	CMD[2] = ((addr & 0x00FF0000) >>16 );
-	CMD[3] = ((addr & 0x0000FF00) >>8 );
-#else
-	mmc_cmd[0]=0x51;
-	mmc_cmd[4]=0;
-	mmc_cmd[5]=0xFF;
-	IniBlockAdd(addr);
-#endif
-
-	temp=MMC_Read_Block(Buffer,512);
-
-	return(temp);
+	//Send Command CMD to MMC/SD-Card
+	//Retry 100 times to send command.
+	if(MMCWriteCommand(MMC_READ_SINGLE_BLOCK,addr<<9,0)!=0)
+	{
+		MMC_Disable();
+		return false; //block write Error!
+	}
+	return MMCReadBlock(Buffer,256);
 }
 
 //***************************************************************************
 //Routine for reading CID Registers from MMC/SD-Card (16Bytes) 
 //Return 0 if no Error.
-uint8 Read_CID_MMC(uint8 *Buffer)
-//***************************************************************************
+bool Read_CID_MMC(uint8 *Buffer)
 {
-	//Command for reading CID Registers
-	//uint8 CMD[] = {0x4A,0x00,0x00,0x00,0x00,0xFF}; 
-	uint8 temp;
-	clr_mmc_cmd();
-	mmc_cmd[0]=0x51;
-	//mmc_cmd[1]=0;
-	//mmc_cmd[2]=0;
-	//mmc_cmd[3]=0;
-	//mmc_cmd[4]=0;
-	mmc_cmd[5]=0xFF;
-	temp=MMC_Read_Block(Buffer,16); //read 16 bytes
+	if(MMCWriteCommand(MMC_SEND_CID,0,0)!=0)
+	{
+		MMC_Disable();
+		return(false); //block write Error!
+	}
+	return MMCReadBlock(Buffer,16); //read 16 bytes
 
-	return(temp);
 }
 
 //***************************************************************************
 //Routine for reading CSD Registers from MMC/SD-Card (16Bytes)
 //Return 0 if no Error.
-uint8 Read_CSD_MMC(uint8 *Buffer)
+bool Read_CSD_MMC(uint8 *Buffer)
 //***************************************************************************
 {	
 	//Command for reading CSD Registers
 	//uint8 CMD[] = {0x49,0x00,0x00,0x00,0x00,0xFF};
-	uint8 temp;
-	clr_mmc_cmd();
-	mmc_cmd[0]=0x49;
-	mmc_cmd[5]=0xFF;
-	temp=MMC_Read_Block(Buffer,16); //read 16 bytes
+	if(MMCWriteCommand(MMC_SEND_CSD,0,0)!=0)
+	{
+		MMC_Disable();
+		return(false); //block write Error!
+	}
+	return MMCReadBlock(Buffer,16); //read 16 bytes
 
-	return(temp);
 }
 
 //***************************************************************************
 //Return: [0]-success or something error!
-uint8 MMC_Start_Read_Sector(uint32 sector)
-//***************************************************************************
-{  
-	uint8 retry;
-	//Command 16 is reading Blocks from MMC/SD-Card
-	//uint8 CMD[] = {0x51,0x00,0x00,0x00,0x00,0xFF}; 
-	uint8 temp;
-
-	asm("cli"); //clear all interrupt.
-	//Address conversation(logic block address-->uint8 address)  
-	//sector = sector << 9; //sector = sector * 512
-
-	//CMD[1] = ((sector & 0xFF000000) >>24 );
-	//CMD[2] = ((sector & 0x00FF0000) >>16 );
-	//CMD[3] = ((sector & 0x0000FF00) >>8 );
-	mmc_cmd[0]=0x51;
-	mmc_cmd[4]=0;
-	mmc_cmd[5]=0xFF;
-	IniBlockAdd(sector);
-	//Send Command CMD to MMC/SD-Card
-	retry=0;
-	do
-	{  //Retry 100 times to send command.
-		temp=Write_Command_MMC();
-		retry++;
-		if(retry==10) 
-		{
-			return(READ_BLOCK_ERROR); //block write Error!
-		}
-	}
-	while(temp!=0); 
-
-	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
-	//Now dat is ready,you can read it out.
-	while (Read_Byte_MMC() != 0xfe){};
-	return 0; //Open a sector successfully!
-}
+//uint8 MMC_Start_Read_Sector(uint32 sector)
+////***************************************************************************
+//{  
+//	uint8 retry;
+//	//Command 16 is reading Blocks from MMC/SD-Card
+//	//uint8 CMD[] = {0x51,0x00,0x00,0x00,0x00,0xFF}; 
+//	uint8 temp;
+//
+//	asm("cli"); //clear all interrupt.
+//	//Address conversation(logic block address-->uint8 address)  
+//	//sector = sector << 9; //sector = sector * 512
+//
+//	//CMD[1] = ((sector & 0xFF000000) >>24 );
+//	//CMD[2] = ((sector & 0x00FF0000) >>16 );
+//	//CMD[3] = ((sector & 0x0000FF00) >>8 );
+//	mmc_cmd[0]=0x51;
+//	mmc_cmd[4]=0;
+//	mmc_cmd[5]=0xFF;
+//	IniBlockAdd(sector);
+//	//Send Command CMD to MMC/SD-Card
+//	retry=0;
+//	do
+//	{  //Retry 100 times to send command.
+//		temp=MMCWriteCommand();
+//		retry++;
+//		if(retry==10) 
+//		{
+//			return(READ_BLOCK_ERROR); //block write Error!
+//		}
+//	}
+//	while(temp!=0); 
+//
+//	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
+//	//Now dat is ready,you can read it out.
+//	while (Read_Byte_MMC() != 0xfe){};
+//	return 0; //Open a sector successfully!
+//}
 
 //***************************************************************************
 void MMC_get_data(uint16 Bytes,uint8 *buffer) 
@@ -547,8 +370,8 @@ void MMC_get_data_LBA(uint32 lba, uint16 Bytes,uint8 *buffer)
 //***************************************************************************
 { //get dat from lba address of MMC/SD-Card
 	//If a new sector has to be read then move head
-	if (readPos==0) MMC_Start_Read_Sector(lba); 
-	MMC_get_data(Bytes,buffer);
+	//if (readPos==0) MMC_Start_Read_Sector(lba); 
+	//MMC_get_data(Bytes,buffer);
 }
 
 //***************************************************************************
