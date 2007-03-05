@@ -7,6 +7,7 @@
 #include "polling.h"
 #include "usart.h"
 #include "card/mmc/MMC.h"
+#include "fs/fat.h"
 #include "../dev/spiflash.h"
 #include "../dev/spiflashpro.h"
 //#include "TM1618.h"
@@ -106,7 +107,7 @@ void polling500ms()
 
 }
 #ifdef POLLING1000MS
-uint8 buf[256];
+//uint8 buf[512];
 void polling1000ms()
 {
 	LCDClear();
@@ -116,27 +117,29 @@ void polling1000ms()
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 	if(haveCard)
 	{
-		if(!MMCGetVolumeInfo())
-		{
-			haveCard=false;
-		}
-		else
-		{
-			LCDClear();
-			uint8 mb=	ToStringWithU(stringbuff,mmc_info.Size);
-			//stringbuff[mb++]='M';
-			stringbuff[mb++]='B';stringbuff[mb++]=0;
-			LCDShowStringAt(16,stringbuff);
-			LCDShowStringAt(0,mmc_info.Name);
-			ToStringWithU(stringbuff,mmc_info.SizeMB);
-			LCDShowStringAt(8,stringbuff);
-			uint16 i=0;
-			for(;i<512;i++)
+	fatInit();
+	/*for(;i<512;i++)
 			{
-				MMCReadSector(i,buf);
+				buf[i] =i; 
 			}
-			
-		}
+	haveCard = MMCWriteSector(0,buf);*/
+		//if(!MMCGetVolumeInfo())
+		//{
+		//	haveCard=false;
+		//}
+		//else
+		//{
+		//	//LCDClear();
+		//	//uint8 mb=	ToStringWithU(stringbuff,mmc_info.Size);
+		//	////stringbuff[mb++]='M';
+		//	//stringbuff[mb++]='B';stringbuff[mb++]=0;
+		//	//LCDShowStringAt(16,stringbuff);
+		//	//LCDShowStringAt(0,mmc_info.Name);
+		//	//ToStringWithU(stringbuff,mmc_info.SizeMB);
+		//	//LCDShowStringAt(8,stringbuff);
+		//	
+		//	
+		//}
 	}
 	else
 	{
@@ -166,17 +169,17 @@ static void iniPoll()
 while(!MMCInit());
 	showTime();
 	LCDShowStringAt(16,"HELLO");
-	SPIFlashSetManufacturer(SFM_Eon);
-	SPIFlashInit();
+	//SPIFlashSetManufacturer(SFM_Eon);
+	//SPIFlashInit();
 
-	SPIFlashCleanWriteProtect();
-	SPIFlashErasureAll();
-	//do
-	//{
-	SPIFlashRead(UsartBuffer,0,0);
+	//SPIFlashCleanWriteProtect();
+	//SPIFlashErasureAll();
+	////do
+	////{
+	//SPIFlashRead(UsartBuffer,0,0);
 
-	SPIFlashPageProgram(UsartBuffer,0);
-	SPIFlashAddress+=256;
+	//SPIFlashPageProgram(UsartBuffer,0);
+	//SPIFlashAddress+=256;
 	//}while(1);
 	////UserEventExitCount =  MaxUserEventCountDown;
 	////ToStringWithXFW(dislinebuf,18);

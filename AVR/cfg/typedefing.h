@@ -17,6 +17,15 @@ typedef uint		uint16;
 typedef ulong		uint32;
 typedef uint64_t	uint64;
 
+typedef	int8	i8;
+typedef	int16	i16;
+typedef	int32	i32;
+typedef	int64	i64;
+typedef	uint8	u8;
+typedef	uint16	u16;
+typedef	uint32	u32;
+typedef	uint64	u64;
+
 typedef uchar	_uchar;
 typedef uint	_uint;
 typedef ulong	_ulong;
@@ -69,7 +78,7 @@ typedef union
 	{
 		_int8 b8_1;
 		_int8 b8_2;
-	}b16_2;
+	}b8_2;
 }b16;
 typedef union
 { 

@@ -87,6 +87,34 @@
 #define SD_APP_OP_COND           41   /* bcr  [31:0] OCR         R3  */
 #define SD_APP_SEND_SCR          51   /* adtc                    R1  */
 
+// R1 Response bit-defines
+#define MMC_R1_BUSY					0x80
+#define MMC_R1_PARAMETER			0x40
+#define MMC_R1_ADDRESS				0x20
+#define MMC_R1_ERASE_SEQ			0x10
+#define MMC_R1_COM_CRC				0x08
+#define MMC_R1_ILLEGAL_COM			0x04
+#define MMC_R1_ERASE_RESET			0x02
+#define MMC_R1_IDLE_STATE			0x01
+// Data Start tokens
+#define MMC_STARTBLOCK_READ			0xFE
+#define MMC_STARTBLOCK_WRITE		0xFE
+#define MMC_STARTBLOCK_MWRITE		0xFC
+// Data Stop tokens
+#define MMC_STOPTRAN_WRITE			0xFD
+// Data Error Token values
+#define MMC_DE_MASK					0x1F
+#define MMC_DE_ERROR				0x01
+#define MMC_DE_CC_ERROR				0x02
+#define MMC_DE_ECC_FAIL				0x04
+#define MMC_DE_OUT_OF_RANGE			0x04
+#define MMC_DE_CARD_LOCKED			0x04
+// Data Response Token values
+#define MMC_DR_MASK					0x1F
+#define MMC_DR_ACCEPT				0x05
+#define MMC_DR_REJECT_CRC			0x0B
+#define MMC_DR_REJECT_WRITE_ERROR	0x0D
+
 /*
 MMC status in R1
 Type

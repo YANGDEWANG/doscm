@@ -214,19 +214,21 @@ bool MMCWriteSector(uint32 addr,uint8 *Buffer)
 	MMC_Disable();
 	return(0);
 } 
-
 /****************************************************************************
-读取块
+读取块中数据区
 Buffer：数据储蓄区
-Bytes ：块字节数
+size  ：数据块大小
+offset：块内偏移
+Bytes ：读取字节数
 ****************************************************************************/
-bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
+bool MMCReadBlockAt(uint8 *Buffer,uint16 size,uint16 offset,uint16 Bytes)
 {  
-	uint16 i; 
+	uint16 i=0; 
 	uint8 retry;
 	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
 	retry=0;
-	while (Read_Byte_MMC() != 0xfe)
+
+	while (Read_Byte_MMC() != MMC_STARTBLOCK_READ)
 	{
 		retry++;
 		if(retry==100) 
@@ -234,12 +236,18 @@ bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
 			MMC_Disable();
 			return(false); //block write Error!
 		}
-	};
-
-	//Write blocks(normal 512Bytes) to MMC/SD-Card
-	for (i=0;i<Bytes;i++)
+	}
+	for (i=0;i<offset;i++)
+	{
+		Read_Byte_MMC();
+	}
+	for (;i<Bytes;i++)
 	{
 		*Buffer++ = Read_Byte_MMC();
+	}
+	for (;i<size;i++)
+	{
+		Read_Byte_MMC();
 	}
 
 	//CRC-Byte
@@ -248,9 +256,45 @@ bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
 
 	//set MMC_Chip_Select to high (MMC/SD-Card invalid)
 	MMC_Disable();
+	Read_Byte_MMC();//end read
 	return(true);
 }
+/****************************************************************************
+读取块
+Buffer：数据储蓄区
+Bytes ：块字节数
+****************************************************************************/
+bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
+{  
+	return MMCReadBlockAt(Buffer,Bytes,0,Bytes);
+	//uint16 i; 
+	//uint8 retry;
+	////Read Start Byte form MMC/SD-Card (FEh/Start Byte)
+	//retry=0;
+	//while (Read_Byte_MMC() != 0xfe)
+	//{
+	//	retry++;
+	//	if(retry==100) 
+	//	{
+	//		MMC_Disable();
+	//		return(false); //block write Error!
+	//	}
+	//};
 
+	////Write blocks(normal 512Bytes) to MMC/SD-Card
+	//for (i=0;i<Bytes;i++)
+	//{
+	//	*Buffer++ = Read_Byte_MMC();
+	//}
+
+	////CRC-Byte
+	//Read_Byte_MMC();//CRC - Byte 
+	//Read_Byte_MMC();//CRC - Byte
+
+	////set MMC_Chip_Select to high (MMC/SD-Card invalid)
+	//MMC_Disable();
+	//return(true);
+}
 /****************************************************************************
 读取扇区（512字节）
 addr  ：扇区编号
@@ -267,9 +311,61 @@ uint8 MMCReadSector(uint32 addr,uint8 *Buffer)
 		MMC_Disable();
 		return false; //block write Error!
 	}
-	return MMCReadBlock(Buffer,256);
+	return MMCReadBlockAt(Buffer,512,0,512);
 }
-
+/****************************************************************************
+读取一个32bit数
+sector：扇区编号
+offset：数据储蓄区
+****************************************************************************/
+u32 MMCReadu32(u32 sector,u16 offset)
+{	
+	u8 buf[4];
+	b32 b;
+	b.b32_1=0;
+	if(MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0)==0
+		&&MMCReadBlockAt(buf,512,offset,4))
+	{
+		b.b8_4.b8_1=	buf[0];
+		b.b8_4.b8_2=	buf[1];
+		b.b8_4.b8_3=	buf[2];
+		b.b8_4.b8_4=	buf[3];
+	}
+	MMC_Disable();
+	return b.b32_1;
+}
+/****************************************************************************
+读取一个16bit数
+sector：扇区编号
+offset：数据储蓄区
+****************************************************************************/
+u16 MMCReadu16(u32 sector,u16 offset)
+{	
+	u8 buf[2];
+	b16 b;
+	b.b16_1=0;
+	if(MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0)==0
+		&&MMCReadBlockAt(buf,512,offset,2))
+	{
+		b.b8_2.b8_1=	buf[0];
+		b.b8_2.b8_2=	buf[1];
+	}
+	MMC_Disable();
+	return b.b16_1;
+}
+/****************************************************************************
+读取一个8bit数
+sector：扇区编号
+offset：数据储蓄区
+****************************************************************************/
+u8 MMCReadu8(u32 sector,u16 offset)
+{	
+	u8 buf[1]={0};
+	MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0);
+	MMCReadBlockAt(buf,512,offset,2);
+	MMC_Disable();
+	return buf[0];
+}
 //***************************************************************************
 //Routine for reading CID Registers from MMC/SD-Card (16Bytes) 
 //Return 0 if no Error.
@@ -341,59 +437,59 @@ bool Read_CSD_MMC(uint8 *Buffer)
 //	return 0; //Open a sector successfully!
 //}
 
-//***************************************************************************
-void MMC_get_data(uint16 Bytes,uint8 *buffer) 
-//***************************************************************************
-{
-	uint16 j;
+////***************************************************************************
+//void MMC_get_data(uint16 Bytes,uint8 *buffer) 
+////***************************************************************************
+//{
+//	uint16 j;
+//
+//	asm("cli"); //clear all interrupt.
+//	for (j=0;((j<Bytes) && (readPos<512));j++)
+//	{	
+//		*buffer++ = Read_Byte_MMC();
+//		readPos++; //read a uint8,increase read position
+//	}
+//	if (readPos==512)  
+//	{  //CRC-Bytes
+//		Read_Byte_MMC();//CRC - Byte 
+//		Read_Byte_MMC();//CRC - Byte
+//		readPos=0;      //reset sector read offset 
+//		sectorPos++;    //Need to read next sector
+//		LBA_Opened=0;   //Set to 1 when a sector is opened.
+//		//set MMC_Chip_Select to high (MMC/SD-Card invalid)
+//		MMC_Disable();  //MMC disable
+//	}
+//}
+//
+////***************************************************************************
+//void MMC_get_data_LBA(uint32 lba, uint16 Bytes,uint8 *buffer)
+////***************************************************************************
+//{ //get dat from lba address of MMC/SD-Card
+//	//If a new sector has to be read then move head
+//	//if (readPos==0) MMC_Start_Read_Sector(lba); 
+//	//MMC_get_data(Bytes,buffer);
+//}
+//
+////***************************************************************************
+//void MMC_GotoSectorOffset(uint32 LBA,uint16 offset)
+////***************************************************************************
+//{  
+//	//Find the offset in the sector
+//	uint8 temp[1];
+//	MMC_LBA_Close(); //close MMC when read a new sector(readPos=0)
+//	while (readPos<offset) MMC_get_data_LBA(LBA,1,temp); //go to offset  
+//}
 
-	asm("cli"); //clear all interrupt.
-	for (j=0;((j<Bytes) && (readPos<512));j++)
-	{	
-		*buffer++ = Read_Byte_MMC();
-		readPos++; //read a uint8,increase read position
-	}
-	if (readPos==512)  
-	{  //CRC-Bytes
-		Read_Byte_MMC();//CRC - Byte 
-		Read_Byte_MMC();//CRC - Byte
-		readPos=0;      //reset sector read offset 
-		sectorPos++;    //Need to read next sector
-		LBA_Opened=0;   //Set to 1 when a sector is opened.
-		//set MMC_Chip_Select to high (MMC/SD-Card invalid)
-		MMC_Disable();  //MMC disable
-	}
-}
-
 //***************************************************************************
-void MMC_get_data_LBA(uint32 lba, uint16 Bytes,uint8 *buffer)
-//***************************************************************************
-{ //get dat from lba address of MMC/SD-Card
-	//If a new sector has to be read then move head
-	//if (readPos==0) MMC_Start_Read_Sector(lba); 
-	//MMC_get_data(Bytes,buffer);
-}
-
-//***************************************************************************
-void MMC_GotoSectorOffset(uint32 LBA,uint16 offset)
-//***************************************************************************
-{  
-	//Find the offset in the sector
-	uint8 temp[1];
-	MMC_LBA_Close(); //close MMC when read a new sector(readPos=0)
-	while (readPos<offset) MMC_get_data_LBA(LBA,1,temp); //go to offset  
-}
-
-//***************************************************************************
-void MMC_LBA_Close()
-//***************************************************************************
-{  
-	uint8 temp[1];
-	while((readPos!=0x00)|(LBA_Opened==1))
-	{ //read MMC till readPos==0x00
-		MMC_get_data(1, temp); //dummy read,temp is a valid dat.
-	}  
-}
+//void MMC_LBA_Close()
+////***************************************************************************
+//{  
+//	uint8 temp[1];
+//	while((readPos!=0x00)|(LBA_Opened==1))
+//	{ //read MMC till readPos==0x00
+//		MMC_get_data(1, temp); //dummy read,temp is a valid dat.
+//	}  
+//}
 
 //---------------------------------------------------------------------------- 
 
