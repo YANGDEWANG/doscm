@@ -7,7 +7,12 @@
 #ifndef _SYSTEM_FS_FAT_H
 #define _SYSTEM_FS_FAT_H
 #include <configure.h>
-
+#ifndef _SYSTEM_FS_FAT_CFG
+//----------------------FAT配置-----------------------//
+#define _SYSTEM_FS_FAT_CFG
+//#define FAT_MAX_FILE_NAME_LEN 16
+//======================FAT配置=======================//
+#endif//_SYSTEM_FS_FAT_CFG
 //簇定义
 #define MSDOSFSROOT     0               
 #define CLUST_FREE      0               
@@ -45,6 +50,7 @@
 #define PART_TYPE_DBFS			0xE0
 #define PART_TYPE_BBT				0xFF
 
+typedef u32 Cluster;
 typedef struct PART_RECORD//  16 字节
 {			
 	u8	prIsActive;					// 0x80代表该分区为缺省分区
@@ -182,43 +188,72 @@ typedef struct LONG_FILE_NAME{
 #define DD_YEAR_MASK            0xFE00  // 年 - 1980
 #define DD_YEAR_SHIFT           9
 
-typedef struct{
-	unsigned long Clust; //当前目录的簇号
-	unsigned int  Nums;   //仅FAT12—FAT16中的根目录区有效
-	unsigned char Index;  //当前的BLOCK中目录项索引
-	unsigned long Sector; //当前目录所在的扇区号
-	unsigned char NumSector;
+typedef struct FIND_FILE_INFO{
+	u32	Clust; //当前目录的簇号
+	u16	Nums;   //仅FAT12—FAT16中的根目录区有效
+	u8	Index;  //当前的BLOCK中目录项索引
+	u32	Sector; //当前目录所在的扇区号
+	u8	NumSector;
 
-}FIND_FILE_INFO;
+}FindFileInfo;
 
 typedef union{
-	 ulong   Sector;    //FAT12&FAT16有效
-	 ulong   Clust;     //FAT32时有效
+	 u32   Sector;    //FAT12&FAT16有效
+	 u32   Clust;     //FAT32时有效
 }ROOTDIR_INF;
 
+typedef struct _FILE{
+	u8	Name[8];          // 文件名
+	u8	ExtensionName[3]; // 扩展名
+	union	
+	{
+		u8 Attribute;
+		struct
+		{
+			u8 IsReadOnly	:1;
+			u8 IsHide		:1;
+			u8 IsSystem		:1;
+			u8 IsVolume		:1;
+			u8 IsDirectory	:1;
+			u8 IsArchive	:1;
+		}Attributes;
+	}Attributes;       // 文件属性
+	u32 StartCluster;     // 文件起始簇号
+	u32	FileSize;  	    // 文件长度
+	u32	Position;
+	u32 CurrentCluster;
+}File;
+extern u8 FatBuffer[512];
 // 可调函数   
-void ReadBlock(unsigned long LBA);
-unsigned long fatClustToSect(unsigned long clust);
-unsigned long  fatGetRootSector(void);
-unsigned long fatGetRootClust(void);
-unsigned char fatInit( void);
-unsigned int fatClusterSize(void);
-unsigned long fatGetFilesize(void);
-char* fatGetFilename(void);
-char* fatGetDirname(void);
-void fatLoadCluster(unsigned long cluster, unsigned char *buffer);
-unsigned long fatNextCluster(unsigned long cluster);
-void GetSysFileClust(unsigned long *hzk,unsigned long *unit);
-void FindLrcFile(unsigned long dircluster,unsigned char *strName);
-unsigned char IsMusicFile(unsigned char *strName);
-void InitSetPath(FIND_FILE_INFO *fp,unsigned long dircluster);
-void ReadBlockToBuff(unsigned long LBA,unsigned char *pbuff); 
-unsigned char ReadNextDirEntry(FIND_FILE_INFO *fp); 
-void UniToGB(unsigned char *pbuf);
-unsigned char IsUnitogbFile(unsigned char *pbuf);
-unsigned char IsHzk12File(unsigned char *pbuf);
-unsigned char IsCurDir(unsigned char *strName);
-unsigned char IsFatherDir(unsigned char *strName);
-unsigned int FindDirIndex(unsigned long fatherdir,unsigned long dircluster);
-unsigned int SerarchFile(unsigned long dircluster,unsigned int index);
+u8 fatInit( void);
+/******************************************************
+从文件夹中查找文件或目录
+DirClust：目录所在的族（0为根目录）
+file	：要查找的文件的文件名和扩展名
+fileIndex：要查找的文件的目录索引
+withName：为true通过文件名查找否则通过索引
+return	：查到文件返回True，并填写file中的其他字段
+******************************************************/
+bool FatGetFile(Cluster DirClust,File* file,u16 fileIndex,bool withName);
+/******************************************************
+从文件夹中查找文件或目录
+DirClust：目录所在的族（0为根目录）
+fileIndex：要查找的文件的目录索引
+return	：查到文件返回True，并填写file中的字段
+******************************************************/
+bool FatGetFileWithIndex(Cluster DirClust,File* file,u16 fileIndex);
+/******************************************************
+从文件夹中查找文件或目录
+dirCluster：目录所在的族（0为根目录）
+file	  ：要查找的文件的文件名和扩展名
+return	  ：查到文件返回True，并填写file中的其他字段
+******************************************************/
+bool FatFindFileInDirWithName(Cluster dirCluster,File *file);
+/******************************************************
+读取文件的下一个扇区（512字节）
+file  ：要读取的文件
+buffer：读取数据的储蓄buffer
+return：成功返回True，到了文件的末尾返回false
+******************************************************/
+bool FatReadSector(File* file,u8* buffer);
 #endif//_SYSTEM_FS_FAT_H

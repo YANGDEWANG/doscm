@@ -117,7 +117,17 @@ void polling1000ms()
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 	if(haveCard)
 	{
-	fatInit();
+		if(fatInit())
+		{
+			File f;
+			memcpy(&f.Name,"TEST    ",8);
+			memcpy(&f.ExtensionName,"TXT",3);
+if(FatFindFileInDirWithName(0,&f))
+{
+	while(FatReadSector(&f,FatBuffer));
+}
+
+		}
 	/*for(;i<512;i++)
 			{
 				buf[i] =i; 
