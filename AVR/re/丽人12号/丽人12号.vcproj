@@ -112,6 +112,10 @@
 				RelativePath=".\dev\STF16360EN.h"
 				>
 			</File>
+			<File
+				RelativePath=".\UI\sysstring.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -166,6 +170,10 @@
 			</File>
 			<File
 				RelativePath=".\dev\STF16360EN.c"
+				>
+			</File>
+			<File
+				RelativePath=".\UI\sysstring.c"
 				>
 			</File>
 		</Filter>

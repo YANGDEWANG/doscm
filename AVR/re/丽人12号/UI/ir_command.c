@@ -1,8 +1,9 @@
 #include <global.h>
 #include "ir.h"
-//#include "at24c02.h"
+#include "pointvfddisplay.h"
 #include "ir_command.h"
 #include "c.h"
+#include "sysstring.h"
 bool noUpdateDis;
 irc PROGMEM irc_com[IRC_MAX] =
 {
@@ -118,15 +119,21 @@ prog_char irc_table2[] =
 };
 void IRC_vcd			()
 {
-	//ControlState = CS_INTPUT_SELECT;
-	//M62446OutputportSet(INTPUT_CD);
-	//M62446ToSound();
+	u8 pl = PT2314Loudness;
+	EepromSaveChar(ESL_PT2314Loudness,(pl&(u8)(~PT2314_SWITCH_MASK))+INTPUT_VCD);
+	PT2314UpdateAll();
+	off5_1();
+	ShowString_P((prog_char*)ssINTPUT,0,6);
+	ShowString_P(ssVCD,6,3);
 }
 void IRC_ac_3  			()
 {
-	//ControlState = CS_INTPUT_SELECT;
-	//M62446OutputportSet(INTPUT_5_1);
-	//M62446ToSound();
+	u8 pl = PT2314Loudness;
+	EepromSaveChar(ESL_PT2314Loudness,(pl&~PT2314_SWITCH_MASK)+INTPUT_AC3);
+	PT2314UpdateAll();
+	on5_1();
+	ShowString_P(ssINTPUT,0,6);
+	ShowString_P(ssDVD,6,3);
 }
 void IRC_tuner			()
 {
@@ -162,7 +169,12 @@ void IRC_soundfield		()
 void IRC_aux			()
 {
 	//ControlState = CS_INTPUT_SELECT;
-	//M62446OutputportSet(INTPUT_AUX);
+	u8 pl = PT2314Loudness;
+	EepromSaveChar(ESL_PT2314Loudness,(pl&~PT2314_SWITCH_MASK)+INTPUT_AUX);
+	PT2314UpdateAll();
+	off5_1();
+	ShowString_P(ssINTPUT,0,6);
+	ShowString_P(ssAUX,6,3);
 	////M62446Update(M62446TONE_OUTPUT);
 	//M62446ToSound();
 }

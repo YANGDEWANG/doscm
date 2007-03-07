@@ -25,7 +25,7 @@
 */
 #include "configure.h"
 
-#define STRING_BUFF_SIZE 16
+
 #define CLICK_CYCLE_MS 10
 extern uint8 SysClickMS;//没CLICK_CYCLE_MS毫秒加一但这样要求你不阻塞
 //extern uint8 UserEventExitCount;

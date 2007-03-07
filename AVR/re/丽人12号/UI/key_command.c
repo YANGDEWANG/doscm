@@ -82,7 +82,7 @@ void PollingKey60ms()
 			}
 		case KEYC_INPUT:
 			{
-				keycmd_menu();
+				
 				break;
 			}
 		case KEYC_M_VOL_M_TONE:

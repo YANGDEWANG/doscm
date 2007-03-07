@@ -47,6 +47,8 @@ extern uint8 KeyCode;
 void DISClean();
 void Pollingpointvfddisplay();//1ms
 void ShowString(char const*s,uint8 lcX,uint8 charCount);
+//只支持大写字母
+void ShowString_P(prog_void *s,uint8 lcX,uint8 charCount);
 void inline DrawDot(IndexScreenLine x,IndexScreenLine y);
 void DrawLine(IndexScreenLine xa, IndexScreenLine ya, IndexScreenLine xb, IndexScreenLine yb);
 void DrawRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,IndexScreenLine y2);

@@ -343,6 +343,12 @@ void ShowString(char const*s,uint8 lcX,uint8 charCount)
 	/*for loop*/
 	//setOffsideToNull(i);
 }
+//只支持大写字母
+void ShowString_P(prog_void *s,uint8 lcX,uint8 charCount)
+{
+	memcpy_P(stringbuff,s,charCount);
+	ShowString(stringbuff,lcX,charCount);
+}
 bool inline cheackDotInDis(IndexScreenLine x,IndexScreenLine y)
 {
 	return x<POINTVFDDISPLAY_X_P

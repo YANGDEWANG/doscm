@@ -16,6 +16,9 @@
 //PC1	PA1->ADC
 //PC0	PA0->ADC
 
+
+#define STRING_BUFF_SIZE 16
+
 //------------------CLICK配置------------------//
 #define CLICK_CFG
 //注意这里的CLICK_CYCLE_US，CLOCKCS需要根据cpu时钟自行计算
@@ -181,5 +184,9 @@ typedef int8 IndexScreenLine;
 //定义得以保存M62429P设置到EEPROM
 #define SAVE_M62429P_SETTING
 //-----------------M62429P配置结束-------------------//
-
+#define INTPUT_AUX 1
+#define INTPUT_VCD 2
+#define INTPUT_AC3 3
+#define off5_1()	(PORTB|=(1<0))
+#define on5_1()		(PORTB&=~(1<0))
 #endif//_CONFIGURE_H_
