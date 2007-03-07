@@ -18,6 +18,7 @@
 #include "eeprom_ex.h"
 #include <avr/wdt.h> 
 #include <fft.h> 
+#include <ir.h> 
 #include "pointvfddisplay.h"
 //#include "ISP.h"
 void IniDev()
@@ -38,11 +39,12 @@ void IniDev()
 	//IniIIC();
 	stf16360enInit();
 	IniM62429P();
-	//IniPT2314_2();
-	//IniPT2314();
+	IniPT2314_2();
+	IniPT2314();
 	//IniPT2314();
 	ControlClock(true);
 	InitDisplay();
+	IniIR();
 //	ADCInit();
 
 

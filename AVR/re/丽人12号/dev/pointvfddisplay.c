@@ -15,7 +15,7 @@ void DISClean()
 		dismem[i]=0;
 	}
 }
-#if 1
+#if 0
 uint8 disdevmem[4];
 
 #define MAX_DISB (sizeof(disdevmem)*8)
@@ -50,11 +50,22 @@ prog_char disGTable[]={
 	5,
 	4,
 };
-prog_char disRTable[]={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27};
+prog_char disRTable[]=
+//{12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39};
+{
+39,38,37,36,
+35,34,33,32,
+31,30,29,28,
+27,26,25,24,
+12,13,14,15,
+16,17,18,19,
+20,21,22,23,
+};
+prog_char KeyRTable[]={8,9,10,11};
 #endif
 // w:8,h:7
 #define CHARIMAGE_BYTECOUNT 7
-#define CHARIMAGE_W 6
+#define CHARIMAGE_W 8
 prog_char chartable[]=
 {
 	//0
@@ -176,21 +187,28 @@ void disclall()
 void getKey()
 {
 	//按键
-	if((pointvfddisplayKEY1PIN&_BV(POINTVFDDISPLAY_KEY1_P)))
+	u8 kc = 0;
+	if(!(pointvfddisplayKEY1PIN&_BV(POINTVFDDISPLAY_KEY1_P)))
 	{
-		KeyCode =keyP+1;
+		kc =keyP+1;
 	}
 #ifdef POINTVFDDISPLAY_KEY2_P
-	else if((pointvfddisplayKEY2PIN&_BV(POINTVFDDISPLAY_KEY2_P)))
+	else if(!(pointvfddisplayKEY2PIN&_BV(POINTVFDDISPLAY_KEY2_P)))
 	{
-		KeyCode =sizeof(KeyRTable)+keyP+1;
+		kc =sizeof(KeyRTable)+keyP+1;
 	}
 #endif
+		//KeyCode =0;
+		
+	keyP++;
+	if(kc==0)
+	{
+		if(keyP==KeyCode)KeyCode = 0;
+	}
 	else
 	{
-		KeyCode =0;
+		KeyCode = kc;
 	}
-	keyP++;
 	if(keyP>=sizeof(KeyRTable))
 		keyP = 0;
 	disSetBit(pgm_read_byte(KeyRTable+keyP));
@@ -199,7 +217,7 @@ void getKey()
 void nextdisG(uint8 topline)
 {
 	uint8 rp = 0;
-	uint8 dismemP;
+	u8 dismemP;
 	uint8 dat;
 	uint8 bc;
 	uint8 lc;
@@ -211,9 +229,9 @@ void nextdisG(uint8 topline)
 	//开栅极
 
 	//
-#if 1
-	disdevmem[0]=0xff;
-	disClrBit(pgm_read_byte(disGTable+disG));
+#if 0
+	//disdevmem[0]=0xff;
+	//disClrBit(pgm_read_byte(disGTable+disG));
 	dismemP = disG*POINTVFDDISPLAY_X_P;
 	for(lc=0;lc<POINTVFDDISPLAY_X_P;lc++)
 	{
@@ -531,7 +549,13 @@ void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,Inde
 
 void InitDisplay()
 {
-	OCR2  = F_CPU/1000/128;//1ms
+	//按键
+	pointvfddisplayKEY1PORT |= _BV(POINTVFDDISPLAY_KEY1_P);
+#ifdef POINTVFDDISPLAY_KEY2_P
+	pointvfddisplayKEY2PORT |= _BV(POINTVFDDISPLAY_KEY2_P);
+#endif
+	//OCR2  = F_CPU/1000/128;//1ms
+	OCR2  = F_CPU/1000/128/2;//0.5ms
 	TCCR2 = _BV(WGM21)|_BV(CS22)|_BV(CS20);//CTC模式//128分频
 	TIMSK|=_BV(OCF2);
 }

@@ -66,7 +66,7 @@ void PollingKey60ms()
 				keycmd_menu();
 				break;
 			}
-		case KEYC_OK_MODE:
+		case KEYC_CH_DOME:
 			{
 				break;
 			}
@@ -76,6 +76,25 @@ void PollingKey60ms()
 				break;
 			}
 		case KEYC_ADD:
+			{
+				CVolume(true);
+				break;
+			}
+		case KEYC_INPUT:
+			{
+				keycmd_menu();
+				break;
+			}
+		case KEYC_M_VOL_M_TONE:
+			{
+				break;
+			}
+		case KEYC_DEL_ECHO:
+			{
+				CVolume(false);
+				break;
+			}
+		case KEYC_DISPLAY:
 			{
 				CVolume(true);
 				break;

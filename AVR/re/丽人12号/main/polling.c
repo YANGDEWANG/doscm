@@ -28,7 +28,8 @@ char stringbuff[STRING_BUFF_SIZE];
 void polling60ms()
 {
 	PollingKey60ms();
-	if(ADCEnd)
+	//DISClean();
+	if(0)//(ADCEnd)
 	{
 		//œ‘∆¡∆’
 		DISClean();//70612
@@ -84,6 +85,7 @@ void polling1000ms()
 {
 }
 #endif//POLLING1000MS
+prog_char huanying[] ={'Z'+1, 'Z'+2,'Z'+3,'Z'+4,'Z'+5,'Z'+6,'Z'+7,'Z'+8};
 static void iniPoll()
 {
 	////UserEventExitCount =  MaxUserEventCountDown;
@@ -93,6 +95,9 @@ static void iniPoll()
 	////UpdateDisplay();
 	//StandardL	=0;
 	//ShowString("123",0,3);
+	memcpy_P(stringbuff,huanying,sizeof(huanying));
+	ShowString(stringbuff,4,sizeof(huanying));
+//DrawLine(0,0,70,7);
 
 }
 #ifdef DWDEBUGF

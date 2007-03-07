@@ -31,6 +31,7 @@
 #ifndef IR_CFG
 //--------------IR配置-----------------//
 #define IR_CFG
+#define IR_CUSTOMCODE     8			//DVD/VCD:00
 #define IR_INTERRUPT 	INT0_vect
 #define IR_PORT	D
 #define IR_P	2
@@ -40,6 +41,7 @@
 void IniIR(void);						//初始化IR
 extern bool IRKeyDown;					//接收完数据时置位
 extern bool IRKeyHold;					//检测到重复信号置位
+extern u8 IrKey;//按键码
 //接收数据储蓄区
 //0:用户码
 //1:用户反码

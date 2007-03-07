@@ -396,20 +396,9 @@ void PollingIRKey()
 	{
 		IRKeyDown = false;
 		//dattmp = ~IRData[1];
-		if(IRData[0]==IR_CUSTOMCODE
-			&&IRData[0]==~IRData[1]
-		&&IRData[2]==~IRData[3])
-		{
-#ifdef SHOWCUSTOMCODE
-			ShowUINT8(DATA_IR[0]);
-#endif//SHOWCUSTOMCODE
-#ifdef IRKEY_TEST
-			ShowUINT8(GetKey_IR());
-#endif//SHOWCUSTOMCODE
+		
 			PkeyHold = true;
-			irKey = IRData[2];
-			keyDown(irKey);
-		}
+			keyDown(IrKey);
 	}
 	if(IRKeyHold)
 	{

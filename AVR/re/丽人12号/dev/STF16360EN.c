@@ -44,7 +44,7 @@ void stf16360enWrite(uint8* dat,uint8 count)
 	//todo: 下面的可不要
 	stf16360enInit();
 	stf16360enIdle = false;
-	stf16360enDesableOut();
+	//stf16360enDesableOut();
 	dataPtr = dat;
 	dataCount = count;
 	SPDR = *dataPtr++;

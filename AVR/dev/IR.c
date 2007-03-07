@@ -40,6 +40,7 @@ enum IR_STATE
 uint8 IRState = IR_IDLE;		//当前接收状态
 uint8 IRInceptBitCount;	//已经收到的比特数
 uint8 perchdata IRData[4];		//接收数据储蓄区
+u8 IrKey;//按键码
 
 bool IRKeyDown;					//接收完数据时置位
 bool IRKeyHold;					//检测到重复信号置位
@@ -77,6 +78,10 @@ ISR(IR_INTERRUPT)
 				{
 					IRState = IR_Incept;
 					IRInceptBitCount = 0;
+					IRData[0]=0;
+					IRData[1]=0;
+					IRData[2]=0;
+					IRData[3]=0;
 				}
 				else if((timespan)>2000u/CLICK_CYCLE_US)//2.25ms重复
 				{
@@ -94,7 +99,19 @@ ISR(IR_INTERRUPT)
 				IRInceptBitCount++;
 				if(IRInceptBitCount>31)
 				{
-					IRKeyDown = true;
+					if(IRData[0]==IR_CUSTOMCODE
+						&&IRData[0]==(u8)(~IRData[1])
+					&&IRData[2]==(u8)(~IRData[3]))
+					{
+#ifdef SHOWCUSTOMCODE
+						ShowUINT8(DATA_IR[0]);
+#endif//SHOWCUSTOMCODE
+#ifdef IRKEY_TEST
+						ShowUINT8(GetKey_IR());
+#endif//SHOWCUSTOMCODE
+						IRKeyDown = true;
+						IrKey = IRData[2];
+					}
 					IRState = IR_IDLE;
 				}
 				break;

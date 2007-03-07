@@ -117,6 +117,7 @@
 //#define STF16360EN_DATP 3
 //#define STF16360EN_ENP  2
 ////-------------------------STF16360E-CFG-ENN-----------------------------//
+#if 0
 //-----------------POINTVFDDISPLAY配置---------------------//
 #define POINTVFDDISPLAY_CFG
 #define POINTVFDDISPLAY_DISMEM_SIZE	63
@@ -137,6 +138,29 @@
 #endif
 typedef int8 IndexScreenLine;
 //--------------POINTVFDDISPLAY配置结束--------------------//
+#else
+//-----------------POINTVFDDISPLAY配置---------------------//
+#define POINTVFDDISPLAY_CFG
+#define POINTVFDDISPLAY_DISMEM_SIZE	63
+#define POINTVFDDISPLAY_X_P	72
+//#define POINTVFDDISPLAY_X_BYTE	3
+#define POINTVFDDISPLAY_Y_P	7
+#define POINTVFDDISPLAY_X_C	(POINTVFDDISPLAY_X_P/8)	//水平方向可用数字显示位
+#ifdef __AVR_ATmega16__
+#define POINTVFDDISPLAY_KEY1_PORT	B
+#define POINTVFDDISPLAY_KEY2_PORT	A
+#define POINTVFDDISPLAY_KEY1_P		6
+#define POINTVFDDISPLAY_KEY2_P		0
+#else
+#define POINTVFDDISPLAY_KEY1_PORT	B
+#define POINTVFDDISPLAY_KEY2_PORT	C
+#define POINTVFDDISPLAY_KEY1_P		4
+#define POINTVFDDISPLAY_KEY2_P		0
+#endif
+typedef int8 IndexScreenLine;
+//--------------POINTVFDDISPLAY配置结束--------------------//
+
+#endif
 //-------------------M62429P配置---------------------//
 #define M62429P_CFG
 //要禁音吧音量最高位设1

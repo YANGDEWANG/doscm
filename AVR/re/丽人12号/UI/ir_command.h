@@ -2,7 +2,6 @@
 #define _IR_COMMAND_H_
 #include "configure.h"
 
-#define IR_CUSTOMCODE     8			//DVD/VCD:00
 #define FirstKeyHoldEventCyc	8
 #define SecondKeyHoldEventCyc	1
 

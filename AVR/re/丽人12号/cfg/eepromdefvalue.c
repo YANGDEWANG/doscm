@@ -8,7 +8,7 @@ prog_char EepromDV[EEPROMDV_DATASIZE]=//EepromDefaultValue
 	0,	//ESL_PT2314Bass,
 	0,	//ESL_PT2314Treble,
 	0,	//ESL_PT2314SpeakerATT,
-	0,	//ESL_PT2314Loudness,
+	25,	//ESL_PT2314Loudness,
 	20,	//ESL_PT2314_2Volume,
 	0,	//ESL_PT2314_2Bass,
 	0,	//ESL_PT2314_2Treble,
