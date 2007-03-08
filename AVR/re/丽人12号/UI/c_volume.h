@@ -36,7 +36,7 @@ typedef struct _ControlData
 extern ControlData data VolumeControl;
 extern void CVolume(bool aors);//根据ControlState配置VolumeControl后执行
 extern void CVolumeExe();//根据VolumeControl执行
-extern enum CONTROL_STATE ControlState;
+extern u8 ControlState;
 
 #endif// _C_VOLUME_H_
 

@@ -2,7 +2,7 @@
 #define _IR_COMMAND_H_
 #include "configure.h"
 
-#define FirstKeyHoldEventCyc	8
+#define FirstKeyHoldEventCyc	5
 #define SecondKeyHoldEventCyc	1
 
 /*

@@ -11,4 +11,8 @@ extern prog_char  ssBASS[];
 extern prog_char  ssECHO[];
 extern prog_char  ssDELAY[];
 
+extern prog_char  ssCCVOL[];
+extern prog_char  ssSWVOL[];
+extern prog_char  ssSLVOL[];
+extern prog_char  ssSRVOL[];
 

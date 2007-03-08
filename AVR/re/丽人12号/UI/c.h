@@ -5,5 +5,7 @@
 #include "c_volume.h"
 #include "pt2314.h"
 #include "pt2314_2.h"
+#include "M62429P.h"
 #include "../main/polling.h"
+#include "eepromsavelocal.h"
 #endif// _C_H_

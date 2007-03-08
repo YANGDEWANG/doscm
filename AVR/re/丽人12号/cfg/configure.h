@@ -144,6 +144,7 @@ typedef int8 IndexScreenLine;
 #else
 //-----------------POINTVFDDISPLAY≈‰÷√---------------------//
 #define POINTVFDDISPLAY_CFG
+#define CHARIMAGE_W 8//◊÷∑˚øÌ∂»
 #define POINTVFDDISPLAY_DISMEM_SIZE	63
 #define POINTVFDDISPLAY_X_P	72
 //#define POINTVFDDISPLAY_X_BYTE	3
@@ -184,9 +185,31 @@ typedef int8 IndexScreenLine;
 //∂®“Âµ√“‘±£¥ÊM62429P…Ë÷√µΩEEPROM
 #define SAVE_M62429P_SETTING
 //-----------------M62429P≈‰÷√Ω· ¯-------------------//
+//---------------------FFT ≈‰÷√----------------------//
+#define FFT_CFG
+#define NUM_FFT 64 // Length of FFT to process
+// Must be 2^N, where N is an integer >= 2
+#define WINDOW_TYPE 0 // WINDOW_TYPE specifies the window to use on the data
+// The available window functions are:
+// 0 = No Window
+// 1 = Triangle Window
+// 2 = Hanning Window
+// 3 = Hamming Window
+// 4 = Blackman Window
+//-------------------FFT ≈‰÷√Ω· ¯--------------------//
+//---------------------ADC≈‰÷√--------------------------//
+#define ADC_CFG
+#define ADC_MUXCFG			(ADC_REFS_AVCC|_BV(ADLAR))
+#define ADC_SAMPLE_COUNT	NUM_FFT
+#define ADC_PS				ADC_PS_64
+//--------------------ADC≈‰÷√ÕÍ-------------------------//
+
 #define INTPUT_AUX 1
 #define INTPUT_VCD 2
 #define INTPUT_AC3 3
-#define off5_1()	(PORTB|=(1<0))
-#define on5_1()		(PORTB&=~(1<0))
+//-----------------IO≈‰÷√Ω· ¯------------------------//
+#define off5_1()	(PORTB|=(1<<0))
+#define on5_1()		(PORTB&=~(1<<0))
+#define offSound()	(PORTD|=(1<<4))
+#define onSound()	(PORTD&=~(1<<4))
 #endif//_CONFIGURE_H_

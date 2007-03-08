@@ -100,7 +100,7 @@ void PollingKey60ms()
 				break;
 			}
 		}
-		//ShowState();
+		ShowState();
 	}
 }
 

@@ -11,6 +11,7 @@
 #include <fft.h> 
 #include "..\ui\key_command.h"
 #include "..\ui\ir_command.h"
+#include "..\ui\c.h"
 ////#define POLLING200MS
 #define POLLING1000MS
 ////uint8 UserEventExitCount;
@@ -25,24 +26,63 @@ char stringbuff[STRING_BUFF_SIZE];
 //WorkState= WS_STANDARD;	
 //ShowState();//导致按相同遥控按键无显示更改
 //}
-void polling60ms()
+void showpingpu()
 {
-	PollingKey60ms();
-	//DISClean();
-	if(0)//(ADCEnd)
+	if(ADCEnd)
 	{
 		//显屏普
-		DISClean();//70612
+		
 		WindowCalc(ADCSample, 1); // Window Real Data, and convert to
 		// differential if it is single-ended
 		Bit_Reverse(ADCSample); // Sort Real (Input) Data in bit-reverse
 		// order
 		Int_FFT(ADCSample, Imag); // Perform FFT on data
+		//DISClean();//70612
 		uint8 x;
-		for(x=0;x<POINTVFDDISPLAY_X_P;x++)
+		u8 d;
+		//for(x=0;x<POINTVFDDISPLAY_X_P;x++)
+		for(x=0;x<64;x++)
 		{
-			//DrawLine(x,POINTVFDDISPLAY_Y_P,x,POINTVFDDISPLAY_Y_P-abs(Imag[x*3])/(0xffff/POINTVFDDISPLAY_Y_P/2));
-			DrawLine(x,0,x,abs(Imag[x*3]));
+			
+
+			d=abs(Imag[x])/5;
+			if(d&1<<7)
+			{
+				d=7;
+			}
+			else if(d&1<<6)
+			{
+				d=6;
+			}
+			else if(d&1<<5)
+			{
+				d=5;
+			}
+			else if(d&1<<4)
+			{
+				d=4;
+			}
+			else if(d&1<<3)
+			{
+				d=3;
+			}
+			else if(d&1<<2)
+			{
+				d=2;
+			}
+			else if(d&1<<1)
+			{
+				d=1;
+			}
+			else
+			{
+				d=0;
+			}
+			DrawColor = false;
+			DrawLine(x+4,0,x+4,POINTVFDDISPLAY_Y_P-d);
+			DrawColor = true;
+			DrawLine(x+4,POINTVFDDISPLAY_Y_P,x+4,POINTVFDDISPLAY_Y_P-d);
+			//DrawLine(x,0,x,abs(Imag[x]));
 		}
 
 		//指正//
@@ -57,6 +97,12 @@ void polling60ms()
 		//开始新的ADC
 		StADC(1);
 	}
+}
+void polling60ms()
+{
+	PollingKey60ms();
+	//DISClean();
+	
 }
 void polling10ms()
 {
@@ -190,7 +236,81 @@ void PollingMain()
 		{
 			//	UpdateDisplay();
 		}
+		showpingpu();
 	}
+	
+}
+void ShowState()
+{
+	uint8 sd;
+	//bool eState = false;
+	
+	const prog_char* s;
+	switch (ControlState)
+	{
+	case CS_VOLUME_MAIN:
+		s=ssVOL;
+		sd=PT2314Volume-10;
+		break;
+	case CS_VOLUME_L:
+		s=ssVOL;
+		sd=PT2314Volume;break;
+	case CS_VOLUME_R:	
+		s=ssVOL;
+		sd=PT2314Volume;break;
+	case CS_VOLUME_CC:
+		s=ssCCVOL;
+		sd=M62429PVolumeA[3];break;
+	case CS_VOLUME_SW:
+		s=ssSWVOL;
+		sd=M62429PVolumeA[2];break;
+	case CS_VOLUME_SL:	
+		s=ssSLVOL;
+		sd=M62429PVolumeA[0];break;
+	case CS_VOLUME_SR:
+		s=ssSRVOL;
+		sd=M62429PVolumeA[1];break;
+	case CS_BASS:		
+		s=ssBASS;
+		sd=PT2314Bass;break;
+	case CS_TREBLE:	
+		s=ssTREBLE;
+		sd=PT2314Treble;break;
+	//case CS_OK_VOLUME:	sd=PT2314Volume/2;break;
+	//case CS_OK_HUNXIANG:sd=(PT2314SpeakerATT+15)/2;break;
+	//case CS_OK_DEYIN:	sd=PT2314Bass;break;
+	//case CS_OK_GAOYIN:	sd=PT2314Treble;break;
+	//case CS_TRACK_MODE://goto NO_CS_VOLUME
+	//	{
+	//		switch (M62446WorkMode)
+	//		{
+	//		case M62446_WM_6CH:ShowString("6C");break;
+	//		case M62446_WM_3CH:ShowString("3C");break;
+	//		case M62446_WM_2CH:ShowString("2C");break;
+	//		}
+	//	}
+		return;
+	//default:goto NO_CS_VOLUME;
+	}
+	//DISClean();
+	ShowString_P(s,0,6);
+	ShowINT8(sd);
+//NO_CS_VOLUME:
+	
+	//switch(M62446OutputPort&M62446OUTPUTPORT_MASK)
+	//{
+	//case INTPUT_5_1:sd = DISP_AC_3;break;
+	//case INTPUT_CD:sd = DISP_CD;break;
+	//case INTPUT_AUX:sd = DISP_AUX;break;
+	//}
+	//if(ControlState==CS_INTPUT_SELECT)
+	//{
+	//	DisplayGlintExitState = false;//will bug
+	//	ssd = sd;
+	//	ShowString("IN");
+	//	eState = true;
+	//}
+
 }
 
 

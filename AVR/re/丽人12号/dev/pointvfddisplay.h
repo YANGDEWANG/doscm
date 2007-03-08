@@ -4,6 +4,7 @@
 #ifndef POINTVFDDISPLAY_CFG
 //-----------------POINTVFDDISPLAYÅäÖÃ---------------------//
 #define POINTVFDDISPLAY_CFG
+#define CHARIMAGE_W 8//×Ö·û¿í¶È
 #define POINTVFDDISPLAY_DISMEM_SIZE	63
 #define POINTVFDDISPLAY_X_P	72
 #define POINTVFDDISPLAY_X_BYTE	9
@@ -41,14 +42,19 @@ enum WCHAR
 	WC_yin,
 	//Ïì
 	WC_xiang,
-	WC_END,
+	//¼õºÅ
+	WC_jianhao,
+	//
+	WC_kongge,
+	
 }__attribute__ ((packed));
 extern uint8 KeyCode;
+extern bool DrawColor;
 void DISClean();
 void Pollingpointvfddisplay();//1ms
 void ShowString(char const*s,uint8 lcX,uint8 charCount);
 //Ö»Ö§³Ö´óÐ´×ÖÄ¸
-void ShowString_P(prog_void *s,uint8 lcX,uint8 charCount);
+void ShowString_P(const prog_char *s,uint8 lcX,uint8 charCount);
 void inline DrawDot(IndexScreenLine x,IndexScreenLine y);
 void DrawLine(IndexScreenLine xa, IndexScreenLine ya, IndexScreenLine xb, IndexScreenLine yb);
 void DrawRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,IndexScreenLine y2);
@@ -56,4 +62,5 @@ void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,Inde
 //void IniKEYInput();
 #define IniKEYInput()
 void InitDisplay();
+void ShowINT8(i8 sd);
 #endif //_POINTDISPLAY_H_

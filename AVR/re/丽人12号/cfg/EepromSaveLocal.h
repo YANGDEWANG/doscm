@@ -12,10 +12,10 @@ enum ESL//eepromSaveLocal
 	ESL_PT2314_2Treble,
 	ESL_PT2314_2SpeakerATT,
 	ESL_PT2314_2Loudness,
-	ESL_M62429P1VolumeL,
-	ESL_M62429P1VolumeR,
-	ESL_M62429P2VolumeL,
-	ESL_M62429P2VolumeR,
+	ESL_M62429P1VolumeL,//sl
+	ESL_M62429P1VolumeR,//sr
+	ESL_M62429P2VolumeL,//sw
+	ESL_M62429P2VolumeR,//cc
 #ifdef EEPROM_CHECK_DATA
 	ESL_addupcheck,//这两位不要动新的值需添加到前面
 #endif//EEPROM_CHECK_DATA

@@ -51,25 +51,34 @@ ISR(IR_INTERRUPT)
 	uint8 timespan = IRTime-IRoldTime;
 	if(irPIN&(1<<IR_P))//引脚为高电平
 	{
-		switch(IRState)
-		{
-		case IR_ST:
-			{
-				if(timespan<8000u/CLICK_CYCLE_US&&timespan>10000u/CLICK_CYCLE_US)//不是9ms起始退出
-				{	
-					IRState = IR_IDLE;
-				}
-				break;
-			}				
-		}	
+		//switch(IRState)
+		//{
+		//case IR_ST:
+		//	{
+		//		if(timespan<8000u/CLICK_CYCLE_US&&timespan>10000u/CLICK_CYCLE_US)//不是9ms起始退出
+		//		{	
+		//			IRState = IR_IDLE;
+		//		}
+		//		break;
+		//	}				
+		//}	
 	}
 	else
 	{
+		if(timespan>10000u/CLICK_CYCLE_US)//超时退出
+		{	
+			IRState = IR_IDLE;
+		}
 		switch(IRState)
 		{
 		case IR_IDLE:
 			{
 				IRState = IR_ST;
+				IRInceptBitCount = 0;
+					IRData[0]=0;
+					IRData[1]=0;
+					IRData[2]=0;
+					IRData[3]=0;
 				break;
 			}
 		case IR_ST:
@@ -77,15 +86,11 @@ ISR(IR_INTERRUPT)
 				if((timespan)>4000u/CLICK_CYCLE_US)//4.5ms起始
 				{
 					IRState = IR_Incept;
-					IRInceptBitCount = 0;
-					IRData[0]=0;
-					IRData[1]=0;
-					IRData[2]=0;
-					IRData[3]=0;
 				}
 				else if((timespan)>2000u/CLICK_CYCLE_US)//2.25ms重复
 				{
 					IRKeyHold = true;
+					IRState = IR_IDLE;
 				}
 				break;
 			}
@@ -109,8 +114,9 @@ ISR(IR_INTERRUPT)
 #ifdef IRKEY_TEST
 						ShowUINT8(GetKey_IR());
 #endif//SHOWCUSTOMCODE
-						IRKeyDown = true;
+						
 						IrKey = IRData[2];
+						IRKeyDown = true;
 					}
 					IRState = IR_IDLE;
 				}

@@ -32,6 +32,7 @@ extern uint8 SysClickMS;//没CLICK_CYCLE_MS毫秒加一但这样要求你不阻塞
 extern uint8 WorkState;
 //#define InUserEvent() (UserEventExitCount=0)
 void PollingMain();
+void ShowState();
 extern char stringbuff[STRING_BUFF_SIZE];
 extern uint8 bbtime;
 extern bool ebb;

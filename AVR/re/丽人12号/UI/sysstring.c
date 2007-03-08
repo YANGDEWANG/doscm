@@ -13,5 +13,10 @@ prog_char  ssBASS[]="BASS";
 prog_char  ssECHO[]="ECHO";
 prog_char  ssDELAY[]="DELAY";
 
+prog_char  ssCCVOL[]="CC VOL";
+prog_char  ssSWVOL[]="SW VOL";
+prog_char  ssSLVOL[]="SL VOL";
+prog_char  ssSRVOL[]="SR VOL";
+
 
 

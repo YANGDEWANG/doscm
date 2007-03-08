@@ -3,6 +3,7 @@
 #include "pointvfddisplay.h"
 #include "boolean.h"
 #include <avr/interrupt.h>
+#include <dwstd.h>
 uint8 dismem[POINTVFDDISPLAY_DISMEM_SIZE];
 uint8 disG;
 uint8 keyP;
@@ -65,7 +66,7 @@ prog_char KeyRTable[]={8,9,10,11};
 #endif
 // w:8,h:7
 #define CHARIMAGE_BYTECOUNT 7
-#define CHARIMAGE_W 8
+
 prog_char chartable[]=
 {
 	//0
@@ -156,6 +157,8 @@ prog_char chartable[]=
 	0x10,0x30,0x38,0xF8,0x36,0x38,0x28,
 	//响
 	0x00,0x10,0xF6,0xAE,0xB6,0xB8,0x40,
+	//-
+	0x00,0x00,0x00,0x7E,0x00,0x00,0x00,
 	// 
 	0,0,0,0,0,0,0,
 };
@@ -203,7 +206,7 @@ void getKey()
 	keyP++;
 	if(kc==0)
 	{
-		if(keyP==KeyCode)KeyCode = 0;
+		if(keyP==KeyCode||(keyP+sizeof(KeyRTable))==KeyCode)KeyCode = 0;
 	}
 	else
 	{
@@ -305,31 +308,43 @@ void ShowString(char const*s,uint8 lcX,uint8 charCount)
 {
 	//	uint8 i;
 	char c;
+	bool endl = false;
 	//prog_char* font;
 	//	DisplayChanged = true;
 	if(charCount)
 	{
 		do
 		{
-			c = *s++;
-			if( (c>='A')&&(c<WC_END) )
+			if(endl)
+			{
+				c=WC_kongge;
+			}
+			else
+			{
+				c = *s++;
+			}
+			if( (c>='A')&&(c<WC_kongge) )
 				c=c-'A'+10;
 			/*	else if( (c>='a')&&(c<='z'))
 			c=vfd_char[c-0x20-'A'];*/
 			else if( (c>='0')&&(c<='9') )
 				c=c-'0';
-			/*else if(c=='-')
-			c=vfdc[26];
-			else if(c=='_')
+			else if(c=='-')
+				c=WC_jianhao-'A'+10;
+			/*else if(c=='_')
 			c=vfdc[27];*/
 			else if(c=='\0')
-				break;
+			{
+				endl=true;
+				c=WC_kongge-'A'+10;
+			}
 			else
-				c=WC_END-'A'+10;
+				c=WC_kongge-'A'+10;
 			memcpy_P(charimg,chartable+c*CHARIMAGE_BYTECOUNT,CHARIMAGE_BYTECOUNT);
 			showChar(lcX);
 			lcX+=CHARIMAGE_W;
 		}while(--charCount);
+		
 		//if(len)
 		//{
 		//	do
@@ -344,7 +359,7 @@ void ShowString(char const*s,uint8 lcX,uint8 charCount)
 	//setOffsideToNull(i);
 }
 //只支持大写字母
-void ShowString_P(prog_void *s,uint8 lcX,uint8 charCount)
+void ShowString_P(const prog_char *s,uint8 lcX,uint8 charCount)
 {
 	memcpy_P(stringbuff,s,charCount);
 	ShowString(stringbuff,lcX,charCount);
@@ -356,14 +371,22 @@ bool inline cheackDotInDis(IndexScreenLine x,IndexScreenLine y)
 		&&x>=0
 		&&y>=0;
 }
+bool DrawColor=true;
 void inline DrawDot(IndexScreenLine x,IndexScreenLine y)
 {
 	uint16 dot ;
-
+	u8 dat,dat2;
+	u8 add;
 	if(cheackDotInDis(x,y))
 	{
 		dot = y*POINTVFDDISPLAY_X_P+x;
-		dismem[dot/8]|=_BV(dot%8);
+		add = dot/8;
+		dat = dismem[add];
+		dat2=_BV(dot%8);
+		if(DrawColor)
+			dismem[add] = dat|dat2;
+		else
+			dismem[add] =dat&(~dat2);
 	}
 }
 void DrawLine(IndexScreenLine xa, IndexScreenLine ya, IndexScreenLine xb, IndexScreenLine yb)
@@ -570,3 +593,10 @@ ISR(TIMER2_COMP_vect)
 	sei();
 	Pollingpointvfddisplay();
 }
+#define SHOW_INT_XP 48
+void ShowINT8(i8 sd)
+{
+	ToStringWithD(stringbuff,sd);
+	ShowString(stringbuff,SHOW_INT_XP,3);
+}
+

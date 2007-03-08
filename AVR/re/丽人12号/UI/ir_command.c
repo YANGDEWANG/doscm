@@ -124,7 +124,8 @@ void IRC_vcd			()
 	PT2314UpdateAll();
 	off5_1();
 	ShowString_P((prog_char*)ssINTPUT,0,6);
-	ShowString_P(ssVCD,6,3);
+	ShowString_P(ssVCD,6*CHARIMAGE_W,3);
+	noUpdateDis=true;
 }
 void IRC_ac_3  			()
 {
@@ -133,7 +134,8 @@ void IRC_ac_3  			()
 	PT2314UpdateAll();
 	on5_1();
 	ShowString_P(ssINTPUT,0,6);
-	ShowString_P(ssDVD,6,3);
+	ShowString_P(ssDVD,6*CHARIMAGE_W,3);
+	noUpdateDis=true;
 }
 void IRC_tuner			()
 {
@@ -174,9 +176,8 @@ void IRC_aux			()
 	PT2314UpdateAll();
 	off5_1();
 	ShowString_P(ssINTPUT,0,6);
-	ShowString_P(ssAUX,6,3);
-	////M62446Update(M62446TONE_OUTPUT);
-	//M62446ToSound();
+	ShowString_P(ssAUX,6*CHARIMAGE_W,3);
+	noUpdateDis=true;
 }
 extern	void IniDev();
 void IRC_reset  		()
@@ -368,7 +369,7 @@ void IRC_reverberationsub()
 void IRC_null(){}
 void callKeyP(uint8 key)
 {
-	((irc)pgm_read_word(irc_com[key]))();
+	((irc)pgm_read_word(irc_com+key))();
 }
 void keyDown(uint8 IRkey)
 {
@@ -392,47 +393,42 @@ void keyDown(uint8 IRkey)
 	}
 	if(!noUpdateDis)
 	{
-		//ShowState();
+		ShowState();
 	}
 	noUpdateDis = false;
 }
 //注意调用时间间隔应大于108ms
 void PollingIRKey()
 {
-	static uint8 irKey;
 	static bool PkeyHold;
 	static uint8 firstHoldDely = FirstKeyHoldEventCyc;
-	//uint8 dattmp;
 	//ShowUINT8(GetKey_IR());
 	if(IRKeyDown)
 	{
 		IRKeyDown = false;
-		//dattmp = ~IRData[1];
-		
-			PkeyHold = true;
-			keyDown(IrKey);
+		PkeyHold = true;
+		keyDown(IrKey);
+		return;
 	}
 	if(IRKeyHold)
 	{
 		IRKeyHold =false;
 		if(PkeyHold)
 		{
-
 			if(firstHoldDely>0)
 			{
 				firstHoldDely--;
 			}
 			else
 			{
-				keyDown(irKey);
+				keyDown(IrKey);
 			}
 
 		}
-		else
-		{
-			firstHoldDely = FirstKeyHoldEventCyc;
-			PkeyHold = false;
-		}
+		return;
 	}
+	
+	PkeyHold = false;
+firstHoldDely = FirstKeyHoldEventCyc;
 }
 

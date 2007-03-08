@@ -24,7 +24,9 @@
 void IniDev()
 {
 	/////////////////初始IO///////////////////////////
-	DDRB|=(1<0);//4053 ABC
+	DDRB|=(1<<0);//4053 ABC
+	DDRD|=(1<<4);//禁音
+	onSound();
 
 	/////////////////初始化设备///////////////////////////
 
@@ -52,33 +54,33 @@ void IniDev()
 
 int main()//                         测试程序
 { 
-	uint8 delt = 0;
+	uint8 delt = 30;
 	while(delt--)
 	{
 		_delay_ms(10);//开机延时
 	}
 	//while(1)
-	{
-		int i =0;
-		for(;i<sizeof(ADCSample)/sizeof(int16);i++)
-		{
-		switch(i%4)
-		{
-		case 2:
-		case 0:ADCSample[i] = (0);break;
-		case 1:ADCSample[i] = (0x7fff);break;
-		case 3:ADCSample[i] = (-0x7fff);break;
-		}
-			
-		//	ff+=0.1;
-		}
-		WindowCalc(ADCSample, 0); // Window Real Data, and convert to
-		// differential if it is single-ended
-		Bit_Reverse(ADCSample); // Sort Real (Input) Data in bit-reverse
-		// order
-		Int_FFT(ADCSample, Imag); // Perform FFT on data
+	//{
+	//	int i =0;
+	//	for(;i<sizeof(ADCSample)/sizeof(int16);i++)
+	//	{
+	//	switch(i%4)
+	//	{
+	//	case 2:
+	//	case 0:ADCSample[i] = (0);break;
+	//	case 1:ADCSample[i] = (0x7fff);break;
+	//	case 3:ADCSample[i] = (-0x7fff);break;
+	//	}
+	//		
+	//	//	ff+=0.1;
+	//	}
+	//	WindowCalc(ADCSample, 0); // Window Real Data, and convert to
+	//	// differential if it is single-ended
+	//	Bit_Reverse(ADCSample); // Sort Real (Input) Data in bit-reverse
+	//	// order
+	//	Int_FFT(ADCSample, Imag); // Perform FFT on data
 
-	}
+	//}
 	IniDev();//初始化设备
 	/////////////////////主循环//////////////////////
 
