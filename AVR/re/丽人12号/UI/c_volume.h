@@ -9,8 +9,9 @@ enum CONTROL_STATE
 	CS_VOLUME_SW,
 	CS_VOLUME_SR,
 	CS_INTPUT_SELECT,
-	CS_VOLUME_L,
-	CS_VOLUME_R,
+	CS_VOLUME_ATT,
+	//CS_VOLUME_L,
+	//CS_VOLUME_R,
 
 	CS_TRACK_MODE,
 	CS_BASS,
@@ -35,7 +36,9 @@ typedef struct _ControlData
 }ControlData;
 extern ControlData data VolumeControl;
 extern void CVolume(bool aors);//根据ControlState配置VolumeControl后执行
-extern void CVolumeExe();//根据VolumeControl执行
+extern void CVolumeExe(bool aor);//根据VolumeControl执行
+void SetIntput(u8 intput);
+void SetMute(u8 loc);
 extern u8 ControlState;
 
 #endif// _C_VOLUME_H_

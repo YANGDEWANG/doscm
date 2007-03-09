@@ -501,6 +501,7 @@ void DrawRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,Inde
 	DrawLine(x1,y2,x1,y1);
 }
 #define exch(a,b) {tmp = a;a = b; b = tmp;}
+#if 0
 void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,IndexScreenLine y2)
 {
 	/*IndexScreenLine tmp;
@@ -575,7 +576,7 @@ void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,Inde
 	while(--dy);
 
 }
-
+#endif
 void InitDisplay()
 {
 	//°´¼ü
@@ -594,9 +595,15 @@ ISR(TIMER2_COMP_vect)
 	Pollingpointvfddisplay();
 }
 #define SHOW_INT_XP 48
-void ShowINT8(i8 sd)
+//void ShowINT8(i8 sd)
+//{
+//	u8 l=ToStringWithD(stringbuff,sd);
+//	ShowString(stringbuff,POINTVFDDISPLAY_X_P-l*CHARIMAGE_W,l);
+//}
+void ShowStringAndI8_P(const prog_char*s , i8 d)
 {
-	ToStringWithD(stringbuff,sd);
-	ShowString(stringbuff,SHOW_INT_XP,3);
+	u8 l=ToStringWithD(stringbuff,d);
+	ShowString(stringbuff,POINTVFDDISPLAY_X_P-l*CHARIMAGE_W,l);
+	ShowString_P(s,0,POINTVFDDISPLAY_X_C-l);
 }
 

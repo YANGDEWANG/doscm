@@ -47,7 +47,7 @@ enum IRC//irc
 {
 IRC_VCD					,
 IRC_AC_3  				,
-IRC_TUNER				,
+//IRC_TUNER				,
 IRC_SOUNDFIELD  		,
 IRC_AUX					,
 IRC_RESET  				,
@@ -86,7 +86,7 @@ IRC_MAX,
 };
 extern void IRC_vcd				();
 extern void IRC_ac_3  			();	
-extern void IRC_tuner			();	
+//extern void IRC_tuner			();	
 extern void IRC_soundfield		();	
 extern void IRC_aux				();	
 extern void IRC_reset  			();
@@ -124,6 +124,7 @@ extern void IRC_null();
 typedef void (*irc)();
 extern irc irc_com[IRC_MAX] PROGMEM;
 extern void PollingIRKey();
+void ShowIntput(u8 intput);
 
 
 

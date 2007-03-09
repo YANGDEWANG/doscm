@@ -43,7 +43,7 @@
 #define dwstdint uint8
 #define dwstdsint int8
 //------------dwstd 配置结束----------------//
-#define	MaxUserEventCountDown 15//用户事件发生后的最大倒计时（单位时间s）指定时间后程序将进入常规流程
+#define	MaxUserEventCountDown 3//用户事件发生后的最大倒计时（单位时间s）指定时间后程序将进入常规流程
 //#define DEBUG
 //#define ASM			  interrupt				interrupt			  interrupt
 //#define C//
@@ -203,13 +203,17 @@ typedef int8 IndexScreenLine;
 #define ADC_SAMPLE_COUNT	NUM_FFT
 #define ADC_PS				ADC_PS_64
 //--------------------ADC配置完-------------------------//
-
+#define INTPUT_DVD 0
 #define INTPUT_AUX 1
 #define INTPUT_VCD 2
 #define INTPUT_AC3 3
+#define INTPUT_MIN 1
+#define INTPUT_MAX 3
 //-----------------IO配置结束------------------------//
-#define off5_1()	(PORTB|=(1<<0))
-#define on5_1()		(PORTB&=~(1<<0))
+#define off5_1()	(PORTB&=~(1<<0))
+#define on5_1()		(PORTB|=(1<<0))
 #define offSound()	(PORTD|=(1<<4))
 #define onSound()	(PORTD&=~(1<<4))
+#define offjj()	(PORTD|=(1<<7))
+#define onjj()	(PORTD&=~(1<<7))
 #endif//_CONFIGURE_H_

@@ -14,24 +14,32 @@
 #include "..\ui\c.h"
 ////#define POLLING200MS
 #define POLLING1000MS
-////uint8 UserEventExitCount;
+#define SOUND_MIN_LEVE 100
+uint8 UserEventExitCount;
+bool ShowPingPu;
+bool HaveSound;
+bool SearchSounding;
 //uint8 WorkState;
 
 //uint8 ErrorCode;
 char stringbuff[STRING_BUFF_SIZE];
 
 
-//void ExitUserEvent()
-//{
-//WorkState= WS_STANDARD;	
-//ShowState();//导致按相同遥控按键无显示更改
-//}
-void showpingpu()
+void ExitUserEvent()
+{
+	DISClean();
+	ShowPingPu = true;
+}
+void InUserEvent()
+{
+	ShowPingPu = false;
+	UserEventExitCount = 0;
+}
+void DoADC()
 {
 	if(ADCEnd)
 	{
-		//显屏普
-		
+
 		WindowCalc(ADCSample, 1); // Window Real Data, and convert to
 		// differential if it is single-ended
 		Bit_Reverse(ADCSample); // Sort Real (Input) Data in bit-reverse
@@ -40,51 +48,59 @@ void showpingpu()
 		//DISClean();//70612
 		uint8 x;
 		u8 d;
+		u16 dat;
 		//for(x=0;x<POINTVFDDISPLAY_X_P;x++)
 		for(x=0;x<64;x++)
 		{
-			
+			dat = abs(Imag[x]);
+			if(dat>SOUND_MIN_LEVE)
+			{
+				HaveSound = true;
+			}
+			//显屏普
+			if(ShowPingPu)
+			{
+				d=dat/5;
+				if(d&1<<7)
+				{
+					d=7;
+				}
+				else if(d&1<<6)
+				{
+					d=6;
+				}
+				else if(d&1<<5)
+				{
+					d=5;
+				}
+				else if(d&1<<4)
+				{
+					d=4;
+				}
+				else if(d&1<<3)
+				{
+					d=3;
+				}
+				else if(d&1<<2)
+				{
+					d=2;
+				}
+				else if(d&1<<1)
+				{
+					d=1;
+				}
+				else
+				{
+					d=0;
+				}
+				DrawColor = false;
+				DrawLine(x+4,0,x+4,POINTVFDDISPLAY_Y_P-d);
+				DrawColor = true;
+				DrawLine(x+4,POINTVFDDISPLAY_Y_P,x+4,POINTVFDDISPLAY_Y_P-d);
+				//DrawLine(x,0,x,abs(Imag[x]));
 
-			d=abs(Imag[x])/5;
-			if(d&1<<7)
-			{
-				d=7;
 			}
-			else if(d&1<<6)
-			{
-				d=6;
-			}
-			else if(d&1<<5)
-			{
-				d=5;
-			}
-			else if(d&1<<4)
-			{
-				d=4;
-			}
-			else if(d&1<<3)
-			{
-				d=3;
-			}
-			else if(d&1<<2)
-			{
-				d=2;
-			}
-			else if(d&1<<1)
-			{
-				d=1;
-			}
-			else
-			{
-				d=0;
-			}
-			DrawColor = false;
-			DrawLine(x+4,0,x+4,POINTVFDDISPLAY_Y_P-d);
-			DrawColor = true;
-			DrawLine(x+4,POINTVFDDISPLAY_Y_P,x+4,POINTVFDDISPLAY_Y_P-d);
-			//DrawLine(x,0,x,abs(Imag[x]));
 		}
-
 		//指正//
 		//DrawLine(1,7,2,0);
 		//DrawLine(10,6,(ADC_H[0]-127)/10+10,-1);
@@ -92,7 +108,7 @@ void showpingpu()
 		//DrawRectangle(1,7-(ADC_H[0]/(255/7)),5,6);
 		//FillRectangle(1,7-(ADC_H[0]/(255/7)),21,6);
 		//FillRectangle(0,ADC_H[0]/(255/7),20,7);//74160:74026:73185:73137:72566:70791
-//		FillRectangle(ADC_H[0]/(255/20),0,20,7);//74160:74026:73185:73137:72566:70791
+		//		FillRectangle(ADC_H[0]/(255/20),0,20,7);//74160:74026:73185:73137:72566:70791
 		//FillRectangle(15,0,20,7);//74160:74026:73185:73137:72566:70791
 		//开始新的ADC
 		StADC(1);
@@ -102,11 +118,16 @@ void polling60ms()
 {
 	PollingKey60ms();
 	//DISClean();
-	
+
 }
 void polling10ms()
 {
-	M62429PUpdateAll();
+	//M62429PUpdateAll();
+}
+void Polling150ms()
+{
+	PollingIRKey();
+	
 }
 #ifdef POLLING200MS
 void polling200ms()
@@ -123,27 +144,76 @@ void polling500ms()
 	//stringbuff[0]=i;
 	//ShowString(stringbuff,3,1);
 	//i++;
-	
+
 
 }
 #ifdef POLLING1000MS
+void polling10s()
+{
+	if(HaveSound)
+	{
+		HaveSound = false;
+	}
+	else
+	{
+		SearchSounding = true;
+	}
+}
+prog_char ssSearching[]="SEARCHING";
 void polling1000ms()
 {
+	static u8 intput = INTPUT_MIN;
+	static u8 polling10s_dat;
+	if(SearchSounding)
+	{
+		InUserEvent();
+		if(!HaveSound)
+		{
+			ShowString_P(ssSearching,0,9);
+			intput++;
+			if(intput>INTPUT_MAX)
+			{
+				intput=INTPUT_MIN;
+			}
+			SetIntput(intput);
+		}
+		else
+		{
+			if(intput!=0)
+			{
+				ShowIntput(intput);
+				intput=0;
+				
+			}
+		}
+	}
+	if(UserEventExitCount<MaxUserEventCountDown)
+	{
+		UserEventExitCount++;
+		if(UserEventExitCount==MaxUserEventCountDown)
+			ExitUserEvent();
+	}
+	polling10s_dat++;
+	if(polling10s_dat>9)
+	{
+		polling10s_dat = 0;
+		polling10s();
+	}
 }
 #endif//POLLING1000MS
 prog_char huanying[] ={'Z'+1, 'Z'+2,'Z'+3,'Z'+4,'Z'+5,'Z'+6,'Z'+7,'Z'+8};
 static void iniPoll()
 {
-	////UserEventExitCount =  MaxUserEventCountDown;
+	//UserEventExitCount =  0;
+	SearchSounding = true;
 	////ToStringWithXFW(dislinebuf,18);
 	////ShowString(dislinebuf,2,4);
 	//ShowString("HELLO",9,7);
 	////UpdateDisplay();
 	//StandardL	=0;
 	//ShowString("123",0,3);
-	memcpy_P(stringbuff,huanying,sizeof(huanying));
-	ShowString(stringbuff,4,sizeof(huanying));
-//DrawLine(0,0,70,7);
+	ShowString_P(huanying,4,sizeof(huanying));
+	//DrawLine(0,0,70,7);
 
 }
 #ifdef DWDEBUGF
@@ -206,7 +276,8 @@ void PollingMain()
 		}
 		if((uint8)(SysClickMS-oldc150ms)>150/CLICK_CYCLE_MS)
 		{
-			PollingIRKey();
+
+			Polling150ms();
 			oldc150ms+=150/CLICK_CYCLE_MS;
 		}
 #ifdef POLLING200MS
@@ -236,28 +307,32 @@ void PollingMain()
 		{
 			//	UpdateDisplay();
 		}
-		showpingpu();
+		DoADC();
 	}
-	
+
 }
 void ShowState()
 {
 	uint8 sd;
 	//bool eState = false;
-	
+
 	const prog_char* s;
 	switch (ControlState)
 	{
 	case CS_VOLUME_MAIN:
 		s=ssVOL;
-		sd=PT2314Volume-10;
+		sd=PT2314Volume;
 		break;
-	case CS_VOLUME_L:
+		/*case CS_VOLUME_L:
 		s=ssVOL;
 		sd=PT2314Volume;break;
-	case CS_VOLUME_R:	
+		case CS_VOLUME_R:	
 		s=ssVOL;
-		sd=PT2314Volume;break;
+		sd=PT2314Volume;break;*/
+	case CS_VOLUME_ATT:	
+		s=ssATT;
+		sd=PT2314SpeakerATT;
+		goto showNODiv;
 	case CS_VOLUME_CC:
 		s=ssCCVOL;
 		sd=M62429PVolumeA[3];break;
@@ -272,31 +347,36 @@ void ShowState()
 		sd=M62429PVolumeA[1];break;
 	case CS_BASS:		
 		s=ssBASS;
-		sd=PT2314Bass;break;
+		sd=PT2314Bass;goto showNODiv;
 	case CS_TREBLE:	
 		s=ssTREBLE;
-		sd=PT2314Treble;break;
-	//case CS_OK_VOLUME:	sd=PT2314Volume/2;break;
-	//case CS_OK_HUNXIANG:sd=(PT2314SpeakerATT+15)/2;break;
-	//case CS_OK_DEYIN:	sd=PT2314Bass;break;
-	//case CS_OK_GAOYIN:	sd=PT2314Treble;break;
-	//case CS_TRACK_MODE://goto NO_CS_VOLUME
-	//	{
-	//		switch (M62446WorkMode)
-	//		{
-	//		case M62446_WM_6CH:ShowString("6C");break;
-	//		case M62446_WM_3CH:ShowString("3C");break;
-	//		case M62446_WM_2CH:ShowString("2C");break;
-	//		}
-	//	}
+		sd=PT2314Treble;goto showNODiv;
+		//case CS_OK_VOLUME:	sd=PT2314Volume/2;break;
+		//case CS_OK_HUNXIANG:sd=(PT2314SpeakerATT+15)/2;break;
+		//case CS_OK_DEYIN:	sd=PT2314Bass;break;
+		//case CS_OK_GAOYIN:	sd=PT2314Treble;break;
+		//case CS_TRACK_MODE://goto NO_CS_VOLUME
+		//	{
+		//		switch (M62446WorkMode)
+		//		{
+		//		case M62446_WM_6CH:ShowString("6C");break;
+		//		case M62446_WM_3CH:ShowString("3C");break;
+		//		case M62446_WM_2CH:ShowString("2C");break;
+		//		}
+		//	}
 		return;
-	//default:goto NO_CS_VOLUME;
+		//default:goto NO_CS_VOLUME;
 	}
 	//DISClean();
-	ShowString_P(s,0,6);
-	ShowINT8(sd);
-//NO_CS_VOLUME:
-	
+	sd = sd>>1;
+showNODiv:
+	/*ShowString_P(s,0,POINTVFDDISPLAY_X_C);
+	ShowINT8(sd);*/
+	ShowStringAndI8_P(s ,sd);
+
+
+	//NO_CS_VOLUME:
+
 	//switch(M62446OutputPort&M62446OUTPUTPORT_MASK)
 	//{
 	//case INTPUT_5_1:sd = DISP_AC_3;break;

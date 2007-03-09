@@ -5,11 +5,12 @@
 #include "c.h"
 #include "sysstring.h"
 bool noUpdateDis;
+
 irc PROGMEM irc_com[IRC_MAX] =
 {
 	IRC_vcd					,
 	IRC_ac_3  				,
-	IRC_tuner				,
+	//IRC_tuner				,
 	IRC_soundfield  		,
 	IRC_aux					,
 	IRC_reset  				,
@@ -45,6 +46,80 @@ irc PROGMEM irc_com[IRC_MAX] =
 	IRC_reverberationsub	,
 	IRC_null,
 };
+#if 1//¿ˆ»À
+prog_char irc_table1[] =
+{
+#define IRC_TABLE_MIN1 0
+	IRC_CENSUB	,			//	0x00
+	IRC_REVERBERATIONADD,	//	0x01
+	IRC_OK_DELAY	,		//	0x02
+	IRC_NULL	,			//	0x03
+	IRC_MUTE 	,			//	0x04
+	IRC_VOLUMESUB	,		//	0x05
+	IRC_GAOYINSUB	,		//	0x06
+	IRC_NULL	,			//	0x07
+	IRC_NULL	,			//	0x08
+	IRC_NULL	,			//	0x09
+	IRC_NULL	,			//	0x0A
+	IRC_NULL	,			//	0x0B
+	IRC_REVERBERATIONSUB,	//	0x0c
+	IRC_VOLUMEADD  	,		//	0x0d
+	IRC_GAOYINADD 	,		//	0x0e
+	IRC_NULL	,			//	0x0F
+	IRC_OK_GAOYINADD	,	//	0x10
+	IRC_OK_GAOYINSUB	,	//	0x11
+	IRC_OK_VOLUMESUB	,	//	0x12
+	IRC_NULL	,			//	0x13
+	IRC_NULL	,			//	0x14
+	IRC_NULL	,			//	0x15
+	IRC_NULL	,			//	0x16
+	IRC_NULL	,			//	0x17
+	IRC_ONEKEYDVD	,		//	0x18
+	IRC_CENADD  	,		//	0x19
+	IRC_SRADD   	,		//	0x1a
+	IRC_NULL	,			//	0x1B
+	IRC_AUX	,		//	0x1cIRC_TUNER
+	IRC_SOUNDFIELD	,				//	0x1d
+	IRC_RESET  	,			//	0x1e
+};
+//	,				
+//	,
+prog_char irc_table2[] =
+{
+#define IRC_TABLE_MIN2 0x41
+	IRC_SRSUB	,			//	0x41
+	IRC_SWADD 	,			//	0x42
+	IRC_SLSUB	,			//	0x43
+	IRC_NULL	,			//	0x44
+	IRC_LEFT	,			//	0x45
+	IRC_DIYINSUB	,		//	0x46
+	IRC_RIGHT	,			//	0x47
+	IRC_NULL	,			//	0x48
+	IRC_NULL	,			//	0x49
+	IRC_NULL	,			//	0x4A
+	IRC_NULL	,			//	0x4B
+	IRC_NULL	,			//	0x4C
+	IRC_PINGPU	,			//	0x4d
+	IRC_DIYINADD 	,		//	0x4e
+	IRC_SWSUB	,			//	0x4f
+	IRC_NULL	,			//	0x50
+	IRC_OK_VOLUMEADD	,	//	0x51
+	IRC_OK_DIYINSUB	,		//	0x52
+	IRC_OK_DIYINADD	,		//	0x53
+	IRC_NULL	,			//	0x54
+	IRC_NULL	,			//	0x55
+	IRC_NULL	,			//	0x56
+	IRC_NULL	,			//	0x57
+	IRC_NULL	,			//	0x58
+	IRC_DENXIANG    	,	//	0x59
+	IRC_SLADD	,			//	0x5a
+	IRC_TRACK_MODE	,		//	0x5b
+	IRC_NULL	,			//	0x5C
+	IRC_AC_3  	,			//	0x5d
+	IRC_NULL  	,			//	0x5e
+	IRC_VCD	,				//	0x5f
+};
+#else
 prog_char irc_table1[] =
 {
 #define IRC_TABLE_MIN1 0
@@ -117,30 +192,21 @@ prog_char irc_table2[] =
 	IRC_SOUNDFIELD  	,	//	0x5e
 	IRC_VCD	,				//	0x5f
 };
+#endif
 void IRC_vcd			()
 {
-	u8 pl = PT2314Loudness;
-	EepromSaveChar(ESL_PT2314Loudness,(pl&(u8)(~PT2314_SWITCH_MASK))+INTPUT_VCD);
-	PT2314UpdateAll();
-	off5_1();
-	ShowString_P((prog_char*)ssINTPUT,0,6);
-	ShowString_P(ssVCD,6*CHARIMAGE_W,3);
-	noUpdateDis=true;
+	SetIntput(INTPUT_VCD);
+	ShowIntput(INTPUT_VCD);
 }
 void IRC_ac_3  			()
 {
-	u8 pl = PT2314Loudness;
-	EepromSaveChar(ESL_PT2314Loudness,(pl&~PT2314_SWITCH_MASK)+INTPUT_AC3);
-	PT2314UpdateAll();
-	on5_1();
-	ShowString_P(ssINTPUT,0,6);
-	ShowString_P(ssDVD,6*CHARIMAGE_W,3);
-	noUpdateDis=true;
+	SetIntput(INTPUT_AC3);
+	ShowIntput(INTPUT_AC3);
 }
-void IRC_tuner			()
-{
-	IRC_aux();
-}
+//void IRC_tuner			()
+//{
+//	IRC_aux();
+//}
 prog_char soundfield[]=
 {
 	//T,B
@@ -151,33 +217,28 @@ prog_char soundfield[]=
 	-5,5,
 	0,0,
 };
+prog_char effect[]="EFFECT";
 void IRC_soundfield		()
 {
-	//static uint8 sf = 0;
-	//uint8 sf2;
-	//sf++;
-	//if(sf==sizeof(soundfield)/2)
-	//{
-	//	sf=0;
-	//}
-	//sf2= sf*2;
-	//EepromSaveChar(ESL_M62446Treble,soundfield[sf2]);
-
-	//EepromSaveChar(ESL_M62446Treble,soundfield[sf2+1]);
-	//noUpdateDis = true;
-	//ShowUINT8(sf);
-	//M62446UpdateAll();
+	static uint8 sf = 0;
+	uint8 sf2;
+	sf++;
+	/*if(sf==sizeof(soundfield)/2)
+	{
+		sf=0;
+	}*/
+	sf = sf%(sizeof(soundfield)/2);
+	sf2= sf*2;
+	EepromSaveChar(ESL_PT2314Bass,pgm_read_byte(soundfield+sf2));
+	EepromSaveChar(ESL_PT2314Treble,pgm_read_byte(soundfield+sf2+1));
+	noUpdateDis = true;
+	ShowStringAndI8_P(effect ,sf);
+	PT2314UpdateAll();
 }
 void IRC_aux			()
 {
-	//ControlState = CS_INTPUT_SELECT;
-	u8 pl = PT2314Loudness;
-	EepromSaveChar(ESL_PT2314Loudness,(pl&~PT2314_SWITCH_MASK)+INTPUT_AUX);
-	PT2314UpdateAll();
-	off5_1();
-	ShowString_P(ssINTPUT,0,6);
-	ShowString_P(ssAUX,6*CHARIMAGE_W,3);
-	noUpdateDis=true;
+	SetIntput(INTPUT_AUX);
+	ShowIntput(INTPUT_AUX);
 }
 extern	void IniDev();
 void IRC_reset  		()
@@ -193,7 +254,8 @@ void IRC_track_mode		()
 void IRC_denxiang    	(){}
 void IRC_onekeydvd		()
 {
-	IRC_ac_3();
+	SetIntput(INTPUT_AC3);
+	ShowIntput(INTPUT_DVD);
 }
 prog_char ok_delay[]=
 {
@@ -220,10 +282,13 @@ void IRC_ok_delay()
 void IRC_pingpu			(){}
 void IRC_att(bool rorl)
 {
-	ControlState = CS_VOLUME_R;
+	/*ControlState = CS_VOLUME_R;
 	CVolume(rorl);
 	ControlState = CS_VOLUME_L;
-	CVolume(!rorl);
+	CVolume(!rorl);*/
+	ControlState = CS_VOLUME_ATT;
+	CVolume(rorl);
+
 }
 void IRC_left	 		()
 {
@@ -375,8 +440,8 @@ void keyDown(uint8 IRkey)
 {
 
 	uint8 key = IRkey-IRC_TABLE_MIN1;
-	
-	//InUserEvent();
+
+	InUserEvent();
 	if(key<sizeof(irc_table1))
 	{
 		key= pgm_read_byte(irc_table1+key);
@@ -427,8 +492,37 @@ void PollingIRKey()
 		}
 		return;
 	}
-	
-	PkeyHold = false;
-firstHoldDely = FirstKeyHoldEventCyc;
-}
 
+	PkeyHold = false;
+	firstHoldDely = FirstKeyHoldEventCyc;
+}
+prog_char ssIntputX[]="DVDAUXVCDAC3";
+void ShowIntput(u8 intput)
+{
+	ShowString_P(ssINTPUT,0,6);
+	ShowString_P(ssIntputX+intput*3,6*CHARIMAGE_W,3);
+	noUpdateDis=true;
+	/*switch(intput)
+	{
+	case  INTPUT_AUX :
+		{
+			ShowString_P(ssAUX,6*CHARIMAGE_W,3);
+			break;
+		}
+	case  INTPUT_VCD :
+		{
+			ShowString_P(ssVCD,6*CHARIMAGE_W,3);
+			break;
+		}
+	case  INTPUT_AC3 :
+		{
+			ShowString_P(ssAC3,6*CHARIMAGE_W,3);
+			break;
+		}
+	case  INTPUT_DVD :
+		{
+			ShowString_P(ssDVD,6*CHARIMAGE_W,3);
+			break;
+		}
+	}*/
+}

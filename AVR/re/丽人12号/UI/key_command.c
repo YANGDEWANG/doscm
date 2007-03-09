@@ -50,7 +50,7 @@ void PollingKey60ms()
 
 	if(kf)//下面处理按键
 	{
-		//InUserEvent();
+		InUserEvent();
 #ifdef DISPLAY_TEST
 		DisplayTestNext(true);
 #endif//DISPLAY_TEST

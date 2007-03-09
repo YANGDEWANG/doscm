@@ -45,6 +45,89 @@ u8 IrKey;//按键码
 bool IRKeyDown;					//接收完数据时置位
 bool IRKeyHold;					//检测到重复信号置位
 uint8 IRoldTime;
+#if 1//下降沿中断
+ISR(IR_INTERRUPT)
+{
+	uint8 IRTime = SysClick;
+	uint8 timespan = IRTime-IRoldTime;
+	if(timespan>15000u/CLICK_CYCLE_US)//超时退出13.5
+	{	
+		IRState = IR_IDLE;
+	}
+	switch(IRState)
+	{
+	case IR_IDLE:
+		{
+			IRState = IR_ST;
+			IRInceptBitCount = 0;
+			IRData[0]=0;
+			IRData[1]=0;
+			IRData[2]=0;
+			IRData[3]=0;
+			break;
+		}
+	case IR_ST:
+		{
+			if((timespan)>12375u/CLICK_CYCLE_US)//13.5ms起始
+			{
+				IRState = IR_Incept;
+			}
+			else if((timespan)>10000u/CLICK_CYCLE_US)//11.25 ms重复
+			{
+				IRKeyHold = true;
+				IRState = IR_IDLE;
+			}
+			break;
+		}
+	case IR_Incept:
+		{
+			if((timespan)>1687u/CLICK_CYCLE_US)//2.25 ms为1；1.125 ms为0
+			{
+				//IRData[IRInceptBitCount/8]|=1<<(IRInceptBitCount%8);
+				SetBit(IRData,IRInceptBitCount,true);
+			}
+			IRInceptBitCount++;
+			if(IRInceptBitCount>31)
+			{
+				if(IRData[0]==IR_CUSTOMCODE
+					&&IRData[0]==(u8)(~IRData[1])
+					&&IRData[2]==(u8)(~IRData[3]))
+				{
+#ifdef SHOWCUSTOMCODE
+					ShowUINT8(DATA_IR[0]);
+#endif//SHOWCUSTOMCODE
+#ifdef IRKEY_TEST
+					ShowUINT8(GetKey_IR());
+#endif//SHOWCUSTOMCODE
+
+					IrKey = IRData[2];
+					IRKeyDown = true;
+				}
+				/*else
+				{
+				IRInceptBitCount++;
+				}*/
+				IRState = IR_IDLE;
+			}
+			break;
+		}
+	}
+
+
+	IRoldTime = IRTime;
+}
+void IniIR(void)	 //初始化接收
+{
+	//DDRD  &=~(1<<DDD2);	//使能上拉电阻
+	//PORTD |= (1<<PD2);	//使能上拉电阻
+	//配置为下降沿中断
+	MCUCR |= (1<<ISC01);
+//	MCUCR &=~(1<<ISC00);
+	//GIFR   = (1<<INTF0);
+	GICR  |= (1<<INT0);	//开外部中断0
+}
+
+#else
 ISR(IR_INTERRUPT)
 {
 	uint8 IRTime = SysClick;
@@ -75,10 +158,10 @@ ISR(IR_INTERRUPT)
 			{
 				IRState = IR_ST;
 				IRInceptBitCount = 0;
-					IRData[0]=0;
-					IRData[1]=0;
-					IRData[2]=0;
-					IRData[3]=0;
+				IRData[0]=0;
+				IRData[1]=0;
+				IRData[2]=0;
+				IRData[3]=0;
 				break;
 			}
 		case IR_ST:
@@ -106,7 +189,7 @@ ISR(IR_INTERRUPT)
 				{
 					if(IRData[0]==IR_CUSTOMCODE
 						&&IRData[0]==(u8)(~IRData[1])
-					&&IRData[2]==(u8)(~IRData[3]))
+						&&IRData[2]==(u8)(~IRData[3]))
 					{
 #ifdef SHOWCUSTOMCODE
 						ShowUINT8(DATA_IR[0]);
@@ -114,10 +197,14 @@ ISR(IR_INTERRUPT)
 #ifdef IRKEY_TEST
 						ShowUINT8(GetKey_IR());
 #endif//SHOWCUSTOMCODE
-						
+
 						IrKey = IRData[2];
 						IRKeyDown = true;
 					}
+					/*else
+					{
+					IRInceptBitCount++;
+					}*/
 					IRState = IR_IDLE;
 				}
 				break;
@@ -137,3 +224,5 @@ void IniIR(void)	 //初始化接收
 	//GIFR   = (1<<INTF0);
 	GICR  |= (1<<INT0);	//开外部中断0
 }
+
+#endif

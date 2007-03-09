@@ -62,5 +62,6 @@ void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,Inde
 //void IniKEYInput();
 #define IniKEYInput()
 void InitDisplay();
-void ShowINT8(i8 sd);
+//void ShowINT8(i8 sd);
+void ShowStringAndI8_P(const prog_char*s , i8 d);
 #endif //_POINTDISPLAY_H_

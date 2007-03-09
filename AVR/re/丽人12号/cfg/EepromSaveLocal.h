@@ -12,7 +12,7 @@ enum ESL//eepromSaveLocal
 	ESL_PT2314_2Treble,
 	ESL_PT2314_2SpeakerATT,
 	ESL_PT2314_2Loudness,
-	ESL_M62429P1VolumeL,//sl
+	ESL_M62429P1VolumeL,//sl//更改顺序请同时更改void c_M62446(bool aors)
 	ESL_M62429P1VolumeR,//sr
 	ESL_M62429P2VolumeL,//sw
 	ESL_M62429P2VolumeR,//cc
