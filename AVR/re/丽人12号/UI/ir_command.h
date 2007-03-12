@@ -81,6 +81,8 @@ IRC_GAOYINADD 			,
 IRC_GAOYINSUB			,
 IRC_REVERBERATIONADD	,
 IRC_REVERBERATIONSUB	,
+IRC_CHMODE2_1,
+IRC_CHMODE5_1,
 IRC_NULL,
 IRC_MAX,
 };
@@ -120,11 +122,15 @@ extern void IRC_gaoyinadd 		();
 extern void IRC_gaoyinsub		();
 extern void IRC_reverberationadd();
 extern void IRC_reverberationsub();
+void 	IRC_CHMode2_1();
+void 	IRC_CHMode5_1();
 extern void IRC_null();
 typedef void (*irc)();
 extern irc irc_com[IRC_MAX] PROGMEM;
 extern void PollingIRKey();
 void ShowIntput(u8 intput);
+extern bool noCallShowState;
+extern bool noInUserEvent;
 
 
 

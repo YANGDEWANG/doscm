@@ -50,18 +50,33 @@ enum WCHAR
 }__attribute__ ((packed));
 extern uint8 KeyCode;
 extern bool DrawColor;
+extern uint8 dismem[POINTVFDDISPLAY_DISMEM_SIZE];
 void DISClean();
 void Pollingpointvfddisplay();//1ms
 void ShowString(char const*s,uint8 lcX,uint8 charCount);
 //只支持大写字母
 void ShowString_P(const prog_char *s,uint8 lcX,uint8 charCount);
-void inline DrawDot(IndexScreenLine x,IndexScreenLine y);
+//只支持大写字母
+void ShowStringALL_P(const prog_char *s);
+void DrawDot(IndexScreenLine x,IndexScreenLine y);
 void DrawLine(IndexScreenLine xa, IndexScreenLine ya, IndexScreenLine xb, IndexScreenLine yb);
 void DrawRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,IndexScreenLine y2);
 void FillRectangle(IndexScreenLine x1,IndexScreenLine y1,IndexScreenLine x2,IndexScreenLine y2);
 //void IniKEYInput();
 #define IniKEYInput()
-void InitDisplay();
+static inline void InitDisplay()
+{
+	//按键
+	pointvfddisplayKEY1PORT |= _BV(POINTVFDDISPLAY_KEY1_P);
+#ifdef POINTVFDDISPLAY_KEY2_P
+	pointvfddisplayKEY2PORT |= _BV(POINTVFDDISPLAY_KEY2_P);
+#endif
+	//OCR2  = F_CPU/1000/128;//1ms
+	OCR2  = F_CPU/1000/128/2;//0.5ms
+	TCCR2 = _BV(WGM21)|_BV(CS22)|_BV(CS20);//CTC模式//128分频
+	TIMSK|=_BV(OCF2);
+}
 //void ShowINT8(i8 sd);
-void ShowStringAndI8_P(const prog_char*s , i8 d);
+void ShowStringAndI8_P2(const prog_char* s1,const prog_char* s2, i8 d);
+void ShowString_P2(const prog_char* s1,const prog_char* s2,u8 charCount);
 #endif //_POINTDISPLAY_H_

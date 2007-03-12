@@ -27,9 +27,9 @@ extern prog_char EepromDV[EEPROMDV_DATASIZE];//EepromDefaultValue
 
 extern uint8 perchdata EepromBuffer[ESL_end];			//数据缓存
 extern uint8 EepromBufferBasicAdd;
-extern void IniEeprom_ex();
-extern void EepromSaveChar(uint8 loc,uint8 dat);	//保存一个字节，loc=位置，dat=数据
-extern void EepromWriteEX();							//写缓存数据到到设备
-extern void EepromSetDefEX();
+void IniEeprom_ex();
+void EepromSaveChar(uint8 loc,uint8 dat);	//保存一个字节，loc=位置，dat=数据
+void EepromWriteEX();							//写缓存数据到到设备
+void EepromSetDefEX();
 
 #endif //_EEPROM_EX_H_

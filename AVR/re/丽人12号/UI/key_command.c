@@ -3,9 +3,10 @@
 #include "c.h"
 #include "dwstd.h"
 #include "../dev/pointvfddisplay.h"
+#include "ir_command.h"
 static uint8 oldk;
 static uint8 REPkeyC = KEY_REPEAT_TIME;
-void keycmd_menu()
+static void keycmd_menu()
 {
 	if(ControlState<CS_INTPUT_SELECT)
 	{
@@ -15,17 +16,24 @@ void keycmd_menu()
 	{
 		ControlState = 0;
 	}
-	//ShowState();
 }
-void PollingOK()
-{
-	//SetBitDisplay(DISP_OK_MOD,ok_mode);
-}
+//static void keycmd_OKmenu()
+//{
+//	ControlState++;
+//	if(ControlState<CS_OK_VOLUME||ControlState>CS_OK_DEYIN)
+//	{
+//		ControlState=CS_OK_VOLUME;
+//	}
+//}
+//void PollingOK()
+//{
+//	//SetBitDisplay(DISP_OK_MOD,ok_mode);
+//}
 void PollingKey60ms()
 {
 	bool kf = false;
 	uint8 k = KeyCode;
-	PollingOK();
+	//PollingOK();
 	if(k==0)
 	{
 		REPkeyC = KEY_REPEAT_TIME;
@@ -50,7 +58,7 @@ void PollingKey60ms()
 
 	if(kf)//下面处理按键
 	{
-		InUserEvent();
+		
 #ifdef DISPLAY_TEST
 		DisplayTestNext(true);
 #endif//DISPLAY_TEST
@@ -59,6 +67,8 @@ void PollingKey60ms()
 		DISClean();
 		ShowString(stringbuff,1,3);
 #endif//KEY_TEST
+		noCallShowState= false;
+		noInUserEvent=false;
 		switch(k)
 		{
 		case KEYC_MENU:
@@ -68,6 +78,8 @@ void PollingKey60ms()
 			}
 		case KEYC_CH_DOME:
 			{
+				ControlState = CS_TRACK_MODE;
+				CVolume(true);
 				break;
 			}
 		case KEYC_SUB:
@@ -82,25 +94,37 @@ void PollingKey60ms()
 			}
 		case KEYC_INPUT:
 			{
-				
-				break;
+				IntoSearchSound();
+				return;
 			}
 		case KEYC_M_VOL_M_TONE:
 			{
+				ControlState++;
+				if(ControlState<CS_OK_VOLUME||ControlState>CS_OK_DEYIN)
+				{
+					ControlState=CS_OK_VOLUME;
+				}
 				break;
 			}
 		case KEYC_DEL_ECHO:
 			{
-				CVolume(false);
+				ControlState++;
+				if(ControlState<CS_OK_HUNXIANG||ControlState>CS_OK_DELAY)
+				{
+					ControlState=CS_OK_HUNXIANG;
+				}
 				break;
 			}
 		case KEYC_DISPLAY:
 			{
-				CVolume(true);
+				IRC_pingpu();
 				break;
 			}
 		}
-		ShowState();
+		if(!noInUserEvent)
+			InUserEvent();
+		if(!noCallShowState)
+			ShowState();
 	}
 }
 

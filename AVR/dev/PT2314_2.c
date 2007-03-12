@@ -39,7 +39,11 @@ void PT2314_2UpdateAll()
 {
 	
 	//VOLUME
+#ifdef MAINVOLUME_U
+	dat[0]=PT2314_2_MAXVOLUME + MAINVOLUME_MAX - PT2314_2Volume-MainVolume;
+#else//MAINVOLUME_U
 	dat[0]=PT2314_2_MAXVOLUME - PT2314_2Volume;
+#endif//MAINVOLUME_U
 	//ATTL
 #ifdef IC_PT2314_2
 	if(PT2314_2Mute)
@@ -61,11 +65,15 @@ void PT2314_2UpdateAll()
 		{
 			if(PT2314_2SpeakerATT>0)//衰减l
 			{
+#ifndef PT2314_2_DONT_ATTL
 				dat[1]|= PT2314_2SpeakerATT;
+#else//PT2314_2_DONT_ATTL
+#pragma warning TODO:由于项目需要上面代码被临时注解
+#endif//PT2314_2_DONT_ATTL
 			}
 			else//衰减r
 			{
-				dat[2]|=cabs(PT2314_2SpeakerATT);
+				dat[2]|=-PT2314_2SpeakerATT;
 			}
 		}
 	}
@@ -88,12 +96,16 @@ void PT2314_2UpdateAll()
 		{
 			if(PT2314_2SpeakerATT>0)//衰减l
 			{
+#ifndef PT2314_2_DONT_ATTL
 				dat[1]|= PT2314_2SpeakerATT;
-//#pragma warning TODO:由于项目需要上面代码被临时注解
+#else//PT2314_2_DONT_ATTL
+#pragma warning TODO:由于项目需要上面代码被临时注解
+#endif//PT2314_2_DONT_ATTL
+
 			}
 			else//衰减r
 			{
-				dat[2]|=(PT2314_2SpeakerATT)>0?PT2314_2SpeakerATT:-PT2314_2SpeakerATT;
+				dat[2]|=-PT2314_2SpeakerATT;
 			}
 		}
 	}

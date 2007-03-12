@@ -13,7 +13,7 @@ bool DisplayChanged;
 uint8 DisplayDeviceMemImage[PT6312_MEMORY_SIZE];	//显示设备内存映像
 void DisplaySetBit(uint8 bitAdd)
 {
-	SetBit(DisplayDeviceMemImage,bitAdd,true);
+	SetBit(DisplayDeviceMemImage,bitAdd);
 }
 void UpdateDisplay()
 {

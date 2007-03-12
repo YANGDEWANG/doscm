@@ -109,7 +109,9 @@ void IniIIC()
 *****************************************************/
 void IICDisable()
 {
+#ifndef AVRSIMULATOR
 	while(IICBusy);
+#endif//AVRSIMULATOR
 	IICPORT &= ~(_BV(I2C_SCK));
 	IICDDR  |= _BV(I2C_SCK);
 	TWCR=0x00;		//关闭TWI模块
@@ -123,7 +125,9 @@ count:	串长度
 *****************************************************/
 void I2CWriteStream(uint8 add,uint8* dat,uint8 count)
 {
+#ifndef AVRSIMULATOR
 	while(IICBusy);
+#endif//AVRSIMULATOR
 #ifdef I2C_SHARE_SDA_PIN
 	IniIIC();
 #endif//I2C_SHARE_SDA_PIN

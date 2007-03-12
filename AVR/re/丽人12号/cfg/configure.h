@@ -43,7 +43,7 @@
 #define dwstdint uint8
 #define dwstdsint int8
 //------------dwstd 配置结束----------------//
-#define	MaxUserEventCountDown 3//用户事件发生后的最大倒计时（单位时间s）指定时间后程序将进入常规流程
+#define	MaxUserEventCountDown 5//用户事件发生后的最大倒计时（单位时间s）指定时间后程序将进入常规流程
 //#define DEBUG
 //#define ASM			  interrupt				interrupt			  interrupt
 //#define C//
@@ -84,12 +84,16 @@
 #endif
 
 //--------------------------SPI口配置_END----------------------------//
+#define MainVolume ((u8)EepromBuffer[ESL_MainVolume])
+#define MAINVOLUME_U		//定义使用主音量控制
+#define MAINVOLUME_MAX 40	//主音量的最大值他应该小于各个声道控制的最大音量值
+
 //-------------------PT2314配置---------------------//
 #define PT2314_CFG
 //选择一种IC
 #define IC_PT2314
 //#define IC_PT2315
-//#define PT2314_EXCHANGE_LR//定义交换左右声道
+#define PT2314_EXCHANGE_LR//定义交换左右声道
 //定义得以保存PT2314设置到EEPROM
 #define SAVE_PT2314_SETTING
 //-----------------PT2314配置结束-------------------//
@@ -200,8 +204,8 @@ typedef int8 IndexScreenLine;
 //---------------------ADC配置--------------------------//
 #define ADC_CFG
 #define ADC_MUXCFG			(ADC_REFS_AVCC|_BV(ADLAR))
-#define ADC_SAMPLE_COUNT	NUM_FFT
-#define ADC_PS				ADC_PS_64
+#define ADC_SAMPLE_COUNT	72
+#define ADC_PS				ADC_PS_32
 //--------------------ADC配置完-------------------------//
 #define INTPUT_DVD 0
 #define INTPUT_AUX 1
@@ -216,4 +220,9 @@ typedef int8 IndexScreenLine;
 #define onSound()	(PORTD&=~(1<<4))
 #define offjj()	(PORTD|=(1<<7))
 #define onjj()	(PORTD&=~(1<<7))
+#ifdef __AVR_ATmega16__
+#define INOK	((PINA&(1<<3)))
+#elif defined __AVR_ATmega8__
+#define INOK	((PINC&(1<<3)))
+#endif
 #endif//_CONFIGURE_H_

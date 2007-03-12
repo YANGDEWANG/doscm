@@ -23,8 +23,9 @@ void StADC(uint8 Channel)//开始ADC/Channel=将使用的引脚
 
 ISR(SIG_ADC)
 {
-	sei();
+//	sei();
 	b16 tmp;
+	
 	tmp.b8_2.b8_1 = ADCL;
 	tmp.b8_2.b8_2 = ADCH;
 	//uint8 l = ADCL;

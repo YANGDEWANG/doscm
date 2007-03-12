@@ -98,6 +98,7 @@ typedef union
 }b32;
 //---------------------”–”√∫Í------------------------------//
 
+#define ISTRUESTOP(ver)	while(ver)
 #define GLUE(a, b)     a##b
 
 #define GPORT(x)       GLUE(PORT, x)

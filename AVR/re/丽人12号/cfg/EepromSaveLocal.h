@@ -2,6 +2,7 @@
 #define _EEPROMSAVELOCAL_H_
 enum ESL//eepromSaveLocal
 {
+	ESL_MainVolume,
 	ESL_PT2314Volume,
 	ESL_PT2314Bass,
 	ESL_PT2314Treble,
@@ -16,6 +17,9 @@ enum ESL//eepromSaveLocal
 	ESL_M62429P1VolumeR,//sr
 	ESL_M62429P2VolumeL,//sw
 	ESL_M62429P2VolumeR,//cc
+	ESL_PingPu,
+	ESL_OKDelay,
+	ESL_TrackMode,
 #ifdef EEPROM_CHECK_DATA
 	ESL_addupcheck,//这两位不要动新的值需添加到前面
 #endif//EEPROM_CHECK_DATA

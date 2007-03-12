@@ -28,6 +28,7 @@
 volatile bool stf16360enIdle;
 uint8*	dataPtr;
 uint8	dataCount;
+extern uint8 disdevmem[7];
 void stf16360enInit()
 {
 	DDR_SPI  |= (1<<MOSI_SPI)|(1<<SCK_SPI)|(1<<SS_SPI);
@@ -38,15 +39,27 @@ void stf16360enInit()
 	stf16360enDesableOut();
 	stf16360enIdle=true;
 }
-void stf16360enWrite(uint8* dat,uint8 count)
+//void stf16360enWrite(uint8* dat,uint8 count)
+//{
+//	WaitSTF16360ENIdle();
+//	//todo: 下面的可不要
+//	stf16360enInit();
+//	stf16360enIdle = false;
+//	//stf16360enDesableOut();
+//	dataPtr = dat;
+//	dataCount = count;
+//	SPDR = *dataPtr++;
+//
+//}
+void stf16360enWrite()
 {
 	WaitSTF16360ENIdle();
 	//todo: 下面的可不要
 	stf16360enInit();
 	stf16360enIdle = false;
 	//stf16360enDesableOut();
-	dataPtr = dat;
-	dataCount = count;
+	dataPtr = disdevmem;
+	dataCount = sizeof(disdevmem);
 	SPDR = *dataPtr++;
 
 }

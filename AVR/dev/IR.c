@@ -84,14 +84,14 @@ ISR(IR_INTERRUPT)
 			if((timespan)>1687u/CLICK_CYCLE_US)//2.25 ms为1；1.125 ms为0
 			{
 				//IRData[IRInceptBitCount/8]|=1<<(IRInceptBitCount%8);
-				SetBit(IRData,IRInceptBitCount,true);
+				SetBit(IRData,IRInceptBitCount);
 			}
 			IRInceptBitCount++;
 			if(IRInceptBitCount>31)
 			{
 				if(IRData[0]==IR_CUSTOMCODE
-					&&IRData[0]==(u8)(~IRData[1])
-					&&IRData[2]==(u8)(~IRData[3]))
+					&&(u8)IRData[0]==(u8)(~IRData[1])
+					&&(u8)IRData[2]==(u8)(~IRData[3]))
 				{
 #ifdef SHOWCUSTOMCODE
 					ShowUINT8(DATA_IR[0]);
@@ -116,16 +116,7 @@ ISR(IR_INTERRUPT)
 
 	IRoldTime = IRTime;
 }
-void IniIR(void)	 //初始化接收
-{
-	//DDRD  &=~(1<<DDD2);	//使能上拉电阻
-	//PORTD |= (1<<PD2);	//使能上拉电阻
-	//配置为下降沿中断
-	MCUCR |= (1<<ISC01);
-//	MCUCR &=~(1<<ISC00);
-	//GIFR   = (1<<INTF0);
-	GICR  |= (1<<INT0);	//开外部中断0
-}
+
 
 #else
 ISR(IR_INTERRUPT)
@@ -182,7 +173,7 @@ ISR(IR_INTERRUPT)
 				if((timespan)>1000u/CLICK_CYCLE_US)//1690us为1；560us为0
 				{
 					//IRData[IRInceptBitCount/8]|=1<<(IRInceptBitCount%8);
-					SetBit(IRData,IRInceptBitCount,true);
+					SetBit(IRData,IRInceptBitCount);
 				}
 				IRInceptBitCount++;
 				if(IRInceptBitCount>31)
@@ -226,3 +217,5 @@ void IniIR(void)	 //初始化接收
 }
 
 #endif
+
+

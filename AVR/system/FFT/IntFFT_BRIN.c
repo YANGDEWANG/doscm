@@ -119,8 +119,7 @@ void WindowCalc(int16 Win_Array[], uint8 SE_data)
 #if (NUM_FFT < 256)
 	uint8 index;
 #endif
-	int16 Win_ArrayTmp;
-	uint16 WindowFuncTmp;
+
 	uint8 *Win_ArrayAt8 = (uint8*)Win_Array;
 	Win_ArrayAt8++;
 	if (SE_data)
@@ -133,6 +132,8 @@ void WindowCalc(int16 Win_Array[], uint8 SE_data)
 		}
 	}
 #if (WINDOW_TYPE != 0) // Use this section if a window has been specified
+	int16 Win_ArrayTmp;
+	uint16 WindowFuncTmp;
 	IBALONG NewVal;
 	NewVal.l = (int32)Win_Array[0] * pgm_read_word(WindowFunc+0);
 	Win_Array[0] = NewVal.i[1];
@@ -483,7 +484,8 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 #endif
 	uint16 group = NUM_FFT/4, stage = 2;
 	int32 CosVal, SinVal;
-	int32 TempImA, TempImB, TempReA, TempReB, TempReA2, TempReB2;
+	int32 TempReA, TempReB;
+	int32 TempImA, TempImB,  TempReA2, TempReB2;
 	IBALONG ReTwid, ImTwid, TempL;
 	// FIRST STAGE - optimized for REAL input data only. This will set all
 	// Imaginary locations to zero.
@@ -493,25 +495,34 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 	// the SIN value is equal to 0.0 and the COS value is equal to 1.0.
 	// Additionally, all Imaginary locations are assumed to be ¡®0¡¯ in this stage of
 	// the algorithm, and are set to ¡®0¡¯.
-	indexA = 0;
-	indexB = 1;//my add
+	//indexA = 0;
+	//indexB = 1;//my add
+	i16 *ReArrayPA = ReArray-1;
+	i16 *ReArrayPB = ReArray;
 	for (g_cnt = 0; g_cnt < NUM_FFT/2; g_cnt++)
 	{
 		//indexB = indexA + 1;//my c
-		TempReA = ReArray[indexA];
-		TempReB = ReArray[indexB];
+		//TempReA = ReArray[indexA];
+		//TempReB = ReArray[indexB];
+		TempReA = *++ReArrayPA;
+		TempReB = *++ReArrayPB;
+
 		// Calculate new value for ReArray[indexA]
 		TempL.l = (int32)TempReA + TempReB;
 		TempReA2 = TempL.l >> 1;
 		// Calculate new value for ReArray[indexB]
 		TempL.l = (int32)TempReA - TempReB;
-		ReArray[indexB] = TempL.l >> 1;
-		ReArray[indexA] = TempReA2;
-		indexA+=2;//my add
-		indexB+=2;//my add
+		*ReArrayPB++ = TempL.l >> 1;
+		*ReArrayPA++ = TempReA2;
+
+
+		//indexA+=2;//my add
+		//indexB+=2;//my add
 	}
 	memset(ImArray,0,NUM_FFT*sizeof(int16));
-
+	//i16 *ImArrayPA;
+	//i16 *ImArrayPB;
+	indexB=NUM_FFT;
 	while (stage <= NUM_FFT/2)
 	{
 		indexA = 0;
@@ -595,5 +606,101 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 		group /= 2;
 		stage *= 2;
 	} // END of While loop
+
+	//while (stage <= NUM_FFT/2)
+	//{
+	//	//indexA = 0;
+	//	ReArrayPA = ReArray;
+	//	ImArrayPA = ImArray;
+	//	ReArrayPB = ReArrayPA+stage;
+	//	ImArrayPB = ImArrayPA+stage;
+	//	sin_index = 0;
+	//	for (g_cnt = 0; g_cnt < group; g_cnt++)
+	//	{
+	//		for (s_cnt = 0; s_cnt < stage; s_cnt++)
+	//		{
+	//			//indexB = indexA + stage;
+	//			
+
+	//			TempReA = *ReArrayPA;
+	//			TempReB = *ReArrayPB;
+	//			TempImA = *ImArrayPA;
+	//			TempImB = *ImArrayPB;
+	//			if (sin_index == 0||sin_index == NUM_FFT/4) // corresponds to ¡°x¡± = 0 radians
+	//			{
+	//				if(sin_index == 0)//½»»»TempReB£¬TempImB£»
+	//				{
+	//					TempL.l = TempReB;
+	//					TempReB = -TempImB;
+	//					TempImB = TempL.l;
+	//				}
+	//				TempL.l = (int32)TempReA - TempImB;
+	//				TempReB2 = TempL.l >> 1;
+	//				TempL.l = (int32)TempReA + TempImB;
+	//				TempReA2 = TempL.l >> 1;
+	//				TempL.l = (int32)TempImA + TempReB;
+	//				TempImB = TempL.l >> 1;
+	//				if(sin_index==0)
+	//				{
+	//					TempReB = TempImB;
+	//				}
+	//				TempL.l = (int32)TempImA - TempReB;
+	//				TempImA = TempL.l >> 1;
+	//			}
+	//			else
+	//			{
+	//				// If no multiplication shortcuts can be taken, the SIN and COS
+	//				// values for the Butterfly calculation are fetched from the
+	//				// SinTable[] array.
+	//				if (sin_index > NUM_FFT/4)
+	//				{
+	//					SinVal = (int16)pgm_read_word(SinTable+(NUM_FFT/2) - sin_index);//SinTable[(NUM_FFT/2) - sin_index];
+	//					CosVal = -(int16)pgm_read_word(SinTable+sin_index - (NUM_FFT/4));//-SinTable[sin_index - (NUM_FFT/4)];
+	//				}
+	//				else
+	//				{
+	//					SinVal = (int16)pgm_read_word(SinTable+sin_index);//SinTable[sin_index];
+	//					CosVal = (int16)pgm_read_word(SinTable+(NUM_FFT/4) - sin_index);//SinTable[(NUM_FFT/4) - sin_index];
+	//				}
+	//				// The SIN and COS values are used here to calculate part of the
+	//				// Butterfly equation
+	//				ReTwid.l = ((int32)TempReB * CosVal) +
+	//					((int32)TempImB * SinVal);
+	//				ImTwid.l = ((int32)TempImB * CosVal) -
+	//					((int32)TempReB * SinVal);
+	//				TempL.i[0] = 0;
+	//				TempL.i[1] = TempReA;
+	//				ReTwid.l += TempL.l>>1;
+	//				TempReA2 = ReTwid.i[1];
+	//				TempL.l -= ReTwid.l;
+	//				TempReB2 = TempL.i[1];
+	//				TempL.i[0] = 0;
+	//				TempL.i[1] = TempImA;
+	//				ImTwid.l += TempL.l>>1;
+	//				TempImA = ImTwid.i[1];
+	//				TempL.l -= ImTwid.l;
+	//				TempImB = TempL.i[1];
+	//				if ((TempL.l < 0)&&(TempL.i[0]))
+	//					TempImB++;
+	//			}
+	//			*ReArrayPA++ = TempReA2;
+	//			*ReArrayPB++ = TempReB2;
+	//			*ImArrayPA++ = TempImA;
+	//			*ImArrayPB++ = TempImB;
+
+	//			//indexA++;
+	//			sin_index += group;
+	//		} // END of stage FOR loop (s_cnt)
+	//		//indexA = indexB + 1;
+	//		ReArrayPA=ReArrayPB+1;
+	//		ImArrayPA=ImArrayPB+1;
+
+
+	//		sin_index = 0;
+	//	} // END of group FOR loop (g_cnt)
+	//	group /= 2;
+	//	stage *= 2;
+	//} // END of While loop
 } // END Int_FFT
 #endif
+

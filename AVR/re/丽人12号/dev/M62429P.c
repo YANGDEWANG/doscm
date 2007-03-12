@@ -99,7 +99,7 @@ void M62429PUpdateAll()
 		_delay_us(2);
 		setCLK();
 		//该数据了
-		vol = M62429PVolumeA[i];
+		vol = M62429PVolumeA[i]+MainVolume;
 		if(vol>M62429P_MAXVOLUME)
 		{
 			vol = 0;

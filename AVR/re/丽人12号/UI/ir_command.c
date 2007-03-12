@@ -4,7 +4,8 @@
 #include "ir_command.h"
 #include "c.h"
 #include "sysstring.h"
-bool noUpdateDis;
+bool noCallShowState;
+bool noInUserEvent;
 
 irc PROGMEM irc_com[IRC_MAX] =
 {
@@ -44,6 +45,8 @@ irc PROGMEM irc_com[IRC_MAX] =
 	IRC_gaoyinsub			,
 	IRC_reverberationadd	,
 	IRC_reverberationsub	,
+	IRC_CHMode2_1,
+	IRC_CHMode5_1,
 	IRC_null,
 };
 #if 1//丽人
@@ -78,8 +81,8 @@ prog_char irc_table1[] =
 	IRC_CENADD  	,		//	0x19
 	IRC_SRADD   	,		//	0x1a
 	IRC_NULL	,			//	0x1B
-	IRC_AUX	,		//	0x1cIRC_TUNER
-	IRC_SOUNDFIELD	,				//	0x1d
+	IRC_AUX	,				//	0x1cIRC_TUNER
+	IRC_SOUNDFIELD	,		//	0x1d
 	IRC_RESET  	,			//	0x1e
 };
 //	,				
@@ -113,10 +116,10 @@ prog_char irc_table2[] =
 	IRC_NULL	,			//	0x58
 	IRC_DENXIANG    	,	//	0x59
 	IRC_SLADD	,			//	0x5a
-	IRC_TRACK_MODE	,		//	0x5b
+	IRC_CHMODE5_1	,		//	0x5b
 	IRC_NULL	,			//	0x5C
 	IRC_AC_3  	,			//	0x5d
-	IRC_NULL  	,			//	0x5e
+	IRC_CHMODE2_1  	,		//	0x5e
 	IRC_VCD	,				//	0x5f
 };
 #else
@@ -193,6 +196,14 @@ prog_char irc_table2[] =
 	IRC_VCD	,				//	0x5f
 };
 #endif
+void IRC_CHMode2_1()
+{
+	SetTrackMode(TM_2_1CH);
+}
+void IRC_CHMode5_1()
+{
+	SetTrackMode(TM_5_1CH);
+}
 void IRC_vcd			()
 {
 	SetIntput(INTPUT_VCD);
@@ -210,12 +221,12 @@ void IRC_ac_3  			()
 prog_char soundfield[]=
 {
 	//T,B
+	0,0,
 	5,0,
 	0,5,
 	5,5,
 	5,-5,
 	-5,5,
-	0,0,
 };
 prog_char effect[]="EFFECT";
 void IRC_soundfield		()
@@ -225,14 +236,14 @@ void IRC_soundfield		()
 	sf++;
 	/*if(sf==sizeof(soundfield)/2)
 	{
-		sf=0;
+	sf=0;
 	}*/
 	sf = sf%(sizeof(soundfield)/2);
 	sf2= sf*2;
 	EepromSaveChar(ESL_PT2314Bass,pgm_read_byte(soundfield+sf2));
 	EepromSaveChar(ESL_PT2314Treble,pgm_read_byte(soundfield+sf2+1));
-	noUpdateDis = true;
-	ShowStringAndI8_P(effect ,sf);
+	noCallShowState = true;
+	ShowStringAndI8_P2(effect,ssnull,sf);
 	PT2314UpdateAll();
 }
 void IRC_aux			()
@@ -244,42 +255,58 @@ extern	void IniDev();
 void IRC_reset  		()
 {
 	EepromSetDefEX();
-	IniDev();
+	((irc)0)();
+	//IniDev();
+	//iniPoll();
 }
 void IRC_track_mode		()
 {
 	ControlState = CS_TRACK_MODE;
 	CVolume(true);
 }
-void IRC_denxiang    	(){}
+prog_char ssLOUD_[]="LOUD ";
+void IRC_denxiang    	()
+{
+	if(PT2314_LoudnessGet())
+	{
+		PT2314_LoudnessClear();
+		ShowString_P2(ssLOUD_,ssOFF,POINTVFDDISPLAY_X_C);
+	}
+	else
+	{
+		PT2314_LoudnessSet();
+		ShowString_P2(ssLOUD_,ssON,POINTVFDDISPLAY_X_C);
+	}
+	EepromSaveChar(ESL_PT2314_2Loudness,PT2314Loudness);
+	noCallShowState = true;
+	PT2314UpdateAll();
+}
 void IRC_onekeydvd		()
 {
 	SetIntput(INTPUT_AC3);
 	ShowIntput(INTPUT_DVD);
 }
-prog_char ok_delay[]=
-{
-	3<<6,
-	1<<6,
-	2<<6,
-	0<<6,
-};
-#define ok_P_MASK (3<<6)
-#define SetOKDelay(okd) (P3&=~ok_P_MASK,P3|=okd)
+
+
 void IRC_ok_delay()
 {
-	/*static uint8 okd = 0;
-	noUpdateDis = true;
-	if(!ok_mode)
-	return;
-	okd++;
-	if(okd==sizeof(ok_delay))
-	okd=0;
-	SetOKDelay(ok_delay[okd]);
-
-	ShowUINT8(okd);*/
+	ControlState = CS_OK_DELAY;
+	CVolume(true);
 }
-void IRC_pingpu			(){}
+
+void IRC_pingpu			()
+{
+	noCallShowState = true;
+	noInUserEvent = true;
+	u8 pu = PUType+1;
+	pu%=PP_OFF;
+	if(ShowPingPu)
+		DISClean();
+	else
+		ShowStringAndI8_P2(ssDISPLAY,ssnull,pu);
+	EepromSaveChar(ESL_PingPu,pu);
+	//ShowPingPu = true;
+}
 void IRC_att(bool rorl)
 {
 	/*ControlState = CS_VOLUME_R;
@@ -292,14 +319,27 @@ void IRC_att(bool rorl)
 }
 void IRC_left	 		()
 {
-	IRC_att(false);
+	IRC_att(true);
 }
 void IRC_right			()
 {
-	IRC_att(true);
+	IRC_att(false);
 }
 void IRC_mute 			()
 {
+	if(Mute)
+	{
+		AutoControl.Step=1;
+		ShowString_P2(ssMUTE_,ssOFF,POINTVFDDISPLAY_X_C);
+	}
+	else
+	{
+		AutoControl.Step=-3;
+		ShowString_P2(ssMUTE_,ssON,POINTVFDDISPLAY_X_C);
+		//InUserEventONAutoExit();
+	}
+	noCallShowState = true;
+	Mute = !Mute;
 	/*if(M62446Mute)
 	M62446ToSound();
 	else
@@ -309,7 +349,7 @@ void IRC_mute 			()
 //extern uint8 __t1,__t2;
 void IRC_ok_diyinadd	()
 {
-	//noUpdateDis = true;
+	//noCallShowState = true;
 	//	ShowUINT8(EepromBuffer[ESL_addupcheck]);
 	//WriteByte24c02(ESL_addupcheck,EepromBuffer[ESL_addupcheck]);
 	ControlState = CS_OK_DEYIN;
@@ -318,7 +358,7 @@ void IRC_ok_diyinadd	()
 //int8 __t3;
 void IRC_ok_diyinsub	()
 {	
-	//noUpdateDis = true;
+	//noCallShowState = true;
 	//	ReadByte24c02(ESL_addupcheck+EepromBufferBasicAdd,&__t3);
 	//ShowUINT8(__t3);
 	//ShowUINT8(getCheck());
@@ -327,7 +367,7 @@ void IRC_ok_diyinsub	()
 }
 void IRC_ok_gaoyinadd	()
 {
-	//noUpdateDis = true;
+	//noCallShowState = true;
 	//ShowUINT8(EepromBufferBasicAdd);
 	ControlState = CS_OK_GAOYIN;
 	CVolume(true);
@@ -335,7 +375,7 @@ void IRC_ok_gaoyinadd	()
 void IRC_ok_gaoyinsub	()
 {
 	/*static uint8 i =0;
-	noUpdateDis = true;
+	noCallShowState = true;
 	ReadByte24c02(i++,&__t3);
 	ShowUINT8(__t3);*/
 	ControlState = CS_OK_GAOYIN;
@@ -434,14 +474,18 @@ void IRC_reverberationsub()
 void IRC_null(){}
 void callKeyP(uint8 key)
 {
+	noInUserEvent=false;
+	noCallShowState=false;
 	((irc)pgm_read_word(irc_com+key))();
+	if(!noInUserEvent)
+		InUserEvent();
+	if(!noCallShowState)
+		ShowState();
 }
 void keyDown(uint8 IRkey)
 {
 
 	uint8 key = IRkey-IRC_TABLE_MIN1;
-
-	InUserEvent();
 	if(key<sizeof(irc_table1))
 	{
 		key= pgm_read_byte(irc_table1+key);
@@ -456,11 +500,6 @@ void keyDown(uint8 IRkey)
 			callKeyP(key);
 		}
 	}
-	if(!noUpdateDis)
-	{
-		ShowState();
-	}
-	noUpdateDis = false;
 }
 //注意调用时间间隔应大于108ms
 void PollingIRKey()
@@ -496,33 +535,36 @@ void PollingIRKey()
 	PkeyHold = false;
 	firstHoldDely = FirstKeyHoldEventCyc;
 }
-prog_char ssIntputX[]="DVDAUXVCDAC3";
+prog_char ssIntputX[]="DVDAUX CDAC3";
 void ShowIntput(u8 intput)
 {
 	ShowString_P(ssINTPUT,0,6);
 	ShowString_P(ssIntputX+intput*3,6*CHARIMAGE_W,3);
-	noUpdateDis=true;
+	noCallShowState=true;
 	/*switch(intput)
 	{
 	case  INTPUT_AUX :
-		{
-			ShowString_P(ssAUX,6*CHARIMAGE_W,3);
-			break;
-		}
+	{
+	ShowString_P(ssAUX,6*CHARIMAGE_W,3);
+	break;
+	}
 	case  INTPUT_VCD :
-		{
-			ShowString_P(ssVCD,6*CHARIMAGE_W,3);
-			break;
-		}
+	{
+	ShowString_P(ssCD,6*CHARIMAGE_W,3);
+	break;
+	}
 	case  INTPUT_AC3 :
-		{
-			ShowString_P(ssAC3,6*CHARIMAGE_W,3);
-			break;
-		}
+	{
+	ShowString_P(ssAC3,6*CHARIMAGE_W,3);
+	break;
+	}
 	case  INTPUT_DVD :
-		{
-			ShowString_P(ssDVD,6*CHARIMAGE_W,3);
-			break;
-		}
+	{
+	ShowString_P(ssDVD,6*CHARIMAGE_W,3);
+	break;
+	}
 	}*/
 }
+
+
+

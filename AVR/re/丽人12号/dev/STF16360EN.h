@@ -38,7 +38,8 @@
 
 extern volatile bool stf16360enIdle;
 void stf16360enInit();
-void stf16360enWrite(uint8* dat,uint8 count);
+void stf16360enWrite();
+//void stf16360enWrite(uint8* dat,uint8 count);
 #define stf16360enEnableOut()	(POPT_SPI&=~(1<<SS_SPI))
 #define stf16360enDesableOut()	(POPT_SPI|=(1<<SS_SPI))
 #define WaitSTF16360ENIdle()	while(!stf16360enIdle)

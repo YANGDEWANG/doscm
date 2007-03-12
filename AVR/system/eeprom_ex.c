@@ -28,7 +28,7 @@ static uint8 getCheck()//效验值为所有数据和的按位取反
 void EepromSaveChar(uint8 loc,uint8 dat)	//保存一个字节，loc=位置，dat=数据
 {
 	EepromBuffer[loc] = dat;
-	SetBit(EepromDataCh,loc,true);
+	SetBit(EepromDataCh,loc);
 	EepromDataChanged = true;
 }
 void EepromWriteEX()							//写缓存数据到到设备
@@ -71,8 +71,21 @@ static void read()
 void IniEeprom_ex()
 {	
 #ifdef EEPROM_CHECK_DATA
+#if 0
+		read();
+		if(EepromBuffer[ESL_addupcheck]==getCheck())
+		{
+			return;
+		}
+		else
+		{
+			EepromSetDefEX();//数据效验失败加载缺省值
+		}
+		
+#else
 	uint16 add = EepromBufferBasicAdd;
-	while(add+sizeof(EepromBuffer)<EEPROM_EX_SIZE)
+	bool retry = false;
+	while((add+sizeof(EepromBuffer))<EEPROM_EX_SIZE)
 	{
 		EepromBufferBasicAdd = add;
 		read();
@@ -83,19 +96,19 @@ void IniEeprom_ex()
 		else
 		{
 			EepromSetDefEX();//数据效验失败加载缺省值
-		}
-		//重新测试刚刚写入的数据
-		read();
-		if(EepromBuffer[ESL_addupcheck]==getCheck())
-		{
-			return;
-		}
-		else
-		{
-			add+=sizeof(EepromBuffer);//数据效验失败提高区块
+			if(retry)
+			{
+				retry=false;
+				add+=sizeof(EepromBuffer);//数据效验失败提高区块
+			}
+			else
+			{
+				retry=true;
+			}
 		}
 	}
 	EepromSetDefEX();//所有尝试失败加载缺省值
+#endif
 #else//EEPROM_CHECK_DATA
 read();
 #endif//EEPROM_CHECK_DATA

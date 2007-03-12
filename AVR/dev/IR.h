@@ -38,7 +38,16 @@
 //------------IR配置结束---------------//
 #endif//IR_CFG
 
-void IniIR(void);						//初始化IR
+static inline void IniIR(void)	 //初始化接收
+{
+	//DDRD  &=~(1<<DDD2);	//使能上拉电阻
+	//PORTD |= (1<<PD2);	//使能上拉电阻
+	//配置为下降沿中断
+	MCUCR |= (1<<ISC01);
+//	MCUCR &=~(1<<ISC00);
+	//GIFR   = (1<<INTF0);
+	GICR  |= (1<<INT0);	//开外部中断0
+}
 extern bool IRKeyDown;					//接收完数据时置位
 extern bool IRKeyHold;					//检测到重复信号置位
 extern u8 IrKey;//按键码

@@ -32,7 +32,8 @@
 //选择一种IC
 //#define IC_PT2314_2
 #define IC_PT2315
-#define PT2314_2_EXCHANGE_LR//定义交换左右声道
+#define PT2314_2_EXCHANGE_LR	//定义交换左右声道
+#define PT2314_2_DONT_ATTL		//定义控制平衡时不控制L声道
 //定义得以保存PT2314_2设置到EEPROM
 #define SAVE_PT2314_2_SETTING
 //-----------------PT2314_2配置结束-------------------//
@@ -44,7 +45,7 @@
 #define PT2314_2ADDRESS 	0x40
 #endif
 
-#define PT2314_2_MAXVOLUME				63
+#define PT2314_2_MAXVOLUME				(63-MAINVOLUME_MAX)
 #define PT2314_2_MINVOLUME				0
 
 #define PT2314_2_MAXSPEAKERATTENUATORS	15
@@ -88,8 +89,8 @@ extern int8  PT2314_2SpeakerATT;
 extern uint8 PT2314_2Loudness;
 #else//SAVE_PT2314_2_SETTING
 #define PT2314_2Volume		(uint8)EepromBuffer[ESL_PT2314_2Volume]
-#define PT2314_2Bass		(uint8)EepromBuffer[ESL_PT2314_2Bass]
-#define PT2314_2Treble		(uint8)EepromBuffer[ESL_PT2314_2Treble]
+#define PT2314_2Bass		(int8)EepromBuffer[ESL_PT2314_2Bass]
+#define PT2314_2Treble		(int8)EepromBuffer[ESL_PT2314_2Treble]
 #define PT2314_2SpeakerATT	(int8) EepromBuffer[ESL_PT2314_2SpeakerATT]
 #define PT2314_2Loudness	(uint8)EepromBuffer[ESL_PT2314_2Loudness]
 #endif//SAVE_PT2314_2_SETTING

@@ -24,13 +24,14 @@
 * http://www.gnu.org/copyleft/gpl.html
 */
 #include "configure.h"
-
+#include "../ui/ir_command.h"
 
 #define CLICK_CYCLE_MS 10
 extern uint8 SysClickMS;//没CLICK_CYCLE_MS毫秒加一但这样要求你不阻塞
 extern uint8 UserEventExitCount;
 extern uint8 WorkState;
 void InUserEvent();// (UserEventExitCount=0)
+
 void PollingMain();
 void ShowState();
 extern char stringbuff[STRING_BUFF_SIZE];
@@ -62,5 +63,24 @@ enum ERRORCODE
 	EC_CustomCodeComp,
 	EC_NOSUPPORTIC,
 };
+void IntoSearchSound();
+void iniPoll();
 extern uint8 ErrorCode;
+extern bool HaveMin;//咪头
+extern bool ShowPingPu;
+enum PING_PU
+{
+	PP_PP,
+	PP_PP_T,
+	PP_PP_W,
+	PP_BOXING,
+	PP_OFF,
+};
+#define PUType ((u8)EepromBuffer[ESL_PingPu])
+static void inline InUserEventONAutoExit() 
+{
+	UserEventExitCount = MaxUserEventCountDown;
+	ShowPingPu = false;
+	noInUserEvent = true;
+}
 #endif//_POLLING_H_

@@ -1,6 +1,6 @@
 #include <global.h>
 #include "AutoControl.h"
-AutoControlData data  AutoControl;
+AutoControlData AutoControl;
 void PollingAutoControl()
 {
 	int8 dat;
@@ -11,14 +11,22 @@ void PollingAutoControl()
 			&&dat<=AutoControl.Max)
 		{
 			*AutoControl.dat = dat;
-			if(AutoControl.Callback)
-			{
-				AutoControl.Callback();
-			}
 		}
 		else
 		{
+			if(AutoControl.Step>0)
+			{
+				*AutoControl.dat = AutoControl.Max;
+			}
+			else
+			{
+				*AutoControl.dat = AutoControl.Min;
+			}
 			AutoControl.Step = 0;
+		}
+		if(AutoControl.Callback)
+		{
+			AutoControl.Callback();
 		}
 	}
 }

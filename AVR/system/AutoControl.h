@@ -11,7 +11,7 @@ typedef struct _AutoControlData
 	AutoControlDataCallback Callback;
 
 }AutoControlData;
-extern AutoControlData data AutoControl;
+extern AutoControlData AutoControl;
 extern void PollingAutoControl();
 
 #endif// _AUTOCONTROL_H_

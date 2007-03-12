@@ -8,8 +8,10 @@
 #include "PT2314_2.h"
 #include "PT2314.h"
 #include "iic.h"
+#include "..\ui\c.h"
 #include "math.h"
 #include "M62429P.h"
+#include "AutoControl.h"
 //#include "SPI.h"
 //#include "displayAudio.h"
 //#include "../ui/Display.h"
@@ -27,6 +29,13 @@ void IniDev()
 	DDRB|=(1<<0);//4053 ABC
 	DDRD|=(1<<4);//禁音
 	DDRD|=(1<<7);//继电器
+	DDRD|=(1<<0);//ok延时
+	DDRD|=(1<<1);//ok延时
+#ifdef __AVR_ATmega16__
+	PORTA|=(1<<3);//ok检测上拉
+#elif defined __AVR_ATmega8__
+	PORTC|=(1<<3);//ok检测上拉
+#endif
 	onSound();
 
 	/////////////////初始化设备///////////////////////////
@@ -41,24 +50,29 @@ void IniDev()
 	IniEeprom_ex();
 	//IniIIC();
 	stf16360enInit();
-	IniM62429P();
-	IniPT2314_2();
-	IniPT2314();
+	AutoControl.Max = MainVolume;
+	AutoControl.Min = 0;
+	//AutoControl.Step = 2;
+	AutoControl.dat = &MainVolume;
+	AutoControl.Callback = UpdateAllVolume;
+//	OldMainVolume = MainVolume;
+	MainVolume = 0;
+	UpdateAllVolume();
 	//IniPT2314();
 	ControlClock(true);
 	InitDisplay();
 	IniIR();
-//	ADCInit();
+	//	ADCInit();
 
 
 }
 
 int main()//                         测试程序
 { 
-	uint8 delt = 30;
+	uint8 delt = 100;
 	while(delt--)
 	{
-		_delay_ms(10);//开机延时
+		_delay_ms(5);//开机延时
 	}
 	//while(1)
 	//{

@@ -39,7 +39,11 @@ void PT2314UpdateAll()
 {
 	
 	//VOLUME
+#ifdef MAINVOLUME_U
+	dat[0]=PT2314_MAXVOLUME + MAINVOLUME_MAX - PT2314Volume-MainVolume;
+#else//MAINVOLUME_U
 	dat[0]=PT2314_MAXVOLUME - PT2314Volume;
+#endif//MAINVOLUME_U
 	//ATTL
 #ifdef IC_PT2314
 	if(PT2314Mute)
@@ -65,7 +69,7 @@ void PT2314UpdateAll()
 			}
 			else//Ë¥¼õr
 			{
-				dat[2]|=(PT2314SpeakerATT)>0?PT2314SpeakerATT:-PT2314SpeakerATT;
+				dat[2]|=-PT2314SpeakerATT;
 			}
 		}
 	}
@@ -93,7 +97,7 @@ void PT2314UpdateAll()
 			}
 			else//Ë¥¼õr
 			{
-				dat[2]|=(PT2314SpeakerATT)>0?PT2314SpeakerATT:-PT2314SpeakerATT;
+				dat[2]|=-PT2314SpeakerATT;
 			}
 		}
 	}
