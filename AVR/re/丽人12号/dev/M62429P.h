@@ -37,7 +37,7 @@
 //-------------------M62429P配置---------------------//
 #define M62429P_CFG
 //要禁音吧音量最高位设1
-//注意ESL_M62429P1VolumeL在EepromBuffer中必须为M62429P数据的开始
+//注意ESL_VolumeSL在EepromBuffer中必须为M62429P数据的开始
 #define M62429P_PORT		D
 #define M62429P_DATP		0
 #define M62429P_SCK1PORT	D
@@ -46,6 +46,11 @@
 #define M62429P_SCK2P		1
 //定义得以保存M62429P设置到EEPROM
 #define SAVE_M62429P_SETTING
+#if !defined(SAVE_M62429P_SETTING)
+extern uint8 M62429PVolumeA[];
+#else//SAVE_M62429P_SETTING
+#define M62429PVolumeA		(EepromBuffer+ESL_VolumeSL)
+#endif//SAVE_M62429P_SETTING
 //-----------------M62429P配置结束-------------------//
 
 #endif//M62429P_CFG
@@ -57,14 +62,10 @@
 #define m62429pSCK2PORT	GPORT(M62429P_SCK2PORT)
 #define m62429pSCK2DDR	GDDR(M62429P_SCK2PORT)
 
-#define M62429P_MAXVOLUME				(83-MAINVOLUME_MAX)//如果最高位为1禁音
-#define M62429P_MINVOLUME				0
+#define M62429P_MAXVOLUME				(83-MAINVOLUME_MAX)
+#define M62429P_MINVOLUME				0//如果为0禁音
 
-#if !defined(SAVE_M62429P_SETTING)
-extern uint8 M62429PVolumeA[];
-#else//SAVE_M62429P_SETTING
-#define M62429PVolumeA		(EepromBuffer+ESL_M62429P1VolumeL)
-#endif//SAVE_M62429P_SETTING
+
 
 
 extern void M62429PUpdateAll();

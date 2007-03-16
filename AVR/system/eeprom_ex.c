@@ -50,6 +50,7 @@ void EepromWriteEX()							//写缓存数据到到设备
 		EepromDataChanged = false;
 	}
 }
+
 void EepromSetDefEX()
 {
 	//memcpy(EepromBuffer,EepromDV,sizeof(EepromDV));//使用了260byte flash
@@ -59,7 +60,12 @@ void EepromSetDefEX()
 	//	EepromBuffer[i] = EepromDV[i];
 	//}
 	memcpy_P(EepromBuffer,EepromDV,sizeof(EepromDV));
-	memset(EepromDataCh,0xff,sizeof(EepromDataCh));
+	dwmemset(EepromDataCh,0xff,sizeof(EepromDataCh));
+	/*u8 i;
+	for(i=0;i<sizeof(EepromDataCh);i++)
+	{
+		EepromDataCh[i]=0xff;
+	}*/
 	EepromDataChanged = true;
 	EepromWriteEX();	
 }

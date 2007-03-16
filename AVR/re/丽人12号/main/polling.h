@@ -63,17 +63,20 @@ enum ERRORCODE
 	EC_CustomCodeComp,
 	EC_NOSUPPORTIC,
 };
-void IntoSearchSound();
+//void IntoSearchSound();
 void iniPoll();
+void NextIntput(bool show);
 extern uint8 ErrorCode;
 extern bool HaveMin;//ﬂ‰Õ∑
 extern bool ShowPingPu;
 enum PING_PU
 {
 	PP_PP,
+	PP_PP3,
+	PP_PP_F,
 	PP_PP_T,
 	PP_PP_W,
-	PP_BOXING,
+	//PP_BOXING,
 	PP_OFF,
 };
 #define PUType ((u8)EepromBuffer[ESL_PingPu])

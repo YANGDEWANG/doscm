@@ -105,4 +105,14 @@ typedef union
 #define GDDR(x)        GLUE(DDR, x)
 #define GPIN(x)        GLUE(PIN, x)
 #define abs(x)	(x>0?x:-x)
+
+static void inline dwmemset(void *dst,u8 dat,u16 size)
+{
+	u16 i;
+	for(i=0;i<size;i++)
+	{
+		((u8*)dst)[i]=dat;
+	}
+}
+
 #endif	//_TYPEDEFINE_H

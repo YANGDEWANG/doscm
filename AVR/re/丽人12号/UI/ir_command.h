@@ -83,6 +83,7 @@ IRC_REVERBERATIONADD	,
 IRC_REVERBERATIONSUB	,
 IRC_CHMODE2_1,
 IRC_CHMODE5_1,
+IRC_OK_PREESTABLISH,
 IRC_NULL,
 IRC_MAX,
 };
@@ -124,6 +125,7 @@ extern void IRC_reverberationadd();
 extern void IRC_reverberationsub();
 void 	IRC_CHMode2_1();
 void 	IRC_CHMode5_1();
+void 	IRC_ok_preestablish();
 extern void IRC_null();
 typedef void (*irc)();
 extern irc irc_com[IRC_MAX] PROGMEM;

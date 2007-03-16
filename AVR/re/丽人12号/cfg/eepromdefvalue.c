@@ -4,22 +4,22 @@
 
 prog_char EepromDV[EEPROMDV_DATASIZE]=//EepromDefaultValue
 {
-	15,//ESL_MainVolume
-	20,	//ESL_PT2314Volume,
+	20,//ESL_MainVolume
 	0,	//ESL_PT2314Bass,
 	0,	//ESL_PT2314Treble,
 	0,	//ESL_PT2314SpeakerATT,
-	25,	//ESL_PT2314Loudness,
-	20,	//ESL_PT2314_2Volume,
+	10,	//ESL_VolumeSL,
+	10,	//ESL_VolumeSR,
+	10,	//ESL_VolumeSW,
+	10,	//ESL_VolumeCC,
+	40,	//ESL_PT2314_2Volume,
 	0,	//ESL_PT2314_2Bass,
 	0,	//ESL_PT2314_2Treble,
-	0,	//ESL_PT2314_2SpeakerATT,
-	0,	//ESL_PT2314_2Loudness,
-	20,	//ESL_M62429P1VolumeL,
-	20,	//ESL_M62429P1VolumeR,
-	20,	//ESL_M62429P2VolumeL,
-	20,	//ESL_M62429P2VolumeR,
-	0,//ESL_PingPu
-	0,//ESL_OKDelay,
+	-7,//ESL_PT2314_2SpeakerATT,
+	0,//ESL_OKDelay
 	0,//ESL_TrackMode
+	0,	//ESL_PT2314_2Loudness,
+	1,	//ESL_PT2314Volume,
+	25,	//ESL_PT2314Loudness,
+	0,//ESL_PingPu
 };

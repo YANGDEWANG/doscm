@@ -8,7 +8,18 @@ static uint8 oldk;
 static uint8 REPkeyC = KEY_REPEAT_TIME;
 static void keycmd_menu()
 {
-	if(ControlState<CS_INTPUT_SELECT)
+	u8 maxCS=CS_VOLUME_CC;
+	if(TrackMode==TM_2_1CH)
+	{
+		maxCS = CS_VOLUME_ATT;
+		if(ControlState==CS_VOLUME_ATT)
+		{
+			ControlState = CS_VOLUME_SW;
+			return;
+		}
+
+	}
+	if(ControlState<maxCS)
 	{
 		ControlState++;
 	}
@@ -94,13 +105,18 @@ void PollingKey60ms()
 			}
 		case KEYC_INPUT:
 			{
-				IntoSearchSound();
-				return;
+				//IntoSearchSound();
+				NextIntput(true);
+				break;
 			}
 		case KEYC_M_VOL_M_TONE:
 			{
+				if(!HaveMin)
+				{
+					goto INVALID;
+				}
 				ControlState++;
-				if(ControlState<CS_OK_VOLUME||ControlState>CS_OK_DEYIN)
+				if(ControlState<CS_OK_VOLUME||ControlState>CS_OK_GAOYIN)
 				{
 					ControlState=CS_OK_VOLUME;
 				}
@@ -108,6 +124,10 @@ void PollingKey60ms()
 			}
 		case KEYC_DEL_ECHO:
 			{
+				if(!HaveMin)
+				{
+					goto INVALID;
+				}
 				ControlState++;
 				if(ControlState<CS_OK_HUNXIANG||ControlState>CS_OK_DELAY)
 				{
@@ -125,6 +145,10 @@ void PollingKey60ms()
 			InUserEvent();
 		if(!noCallShowState)
 			ShowState();
+		return;
+INVALID:
+		InUserEvent();
+		ShowStringALL_P(ssINVALID);
 	}
 }
 

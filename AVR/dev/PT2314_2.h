@@ -33,7 +33,9 @@
 //#define IC_PT2314_2
 #define IC_PT2315
 #define PT2314_2_EXCHANGE_LR	//定义交换左右声道
-#define PT2314_2_DONT_ATTL		//定义控制平衡时不控制L声道
+//#define PT2314_2_DONT_ATTL		//定义控制平衡时不控制L声道
+#define PT2314_2_MAINVOLUME_U		//定义使用主音量控制
+#define PT2314_2_MAINVOLUME_MAX 62	//主音量的最大值他应该小于各个声道控制的最大音量值
 //定义得以保存PT2314_2设置到EEPROM
 #define SAVE_PT2314_2_SETTING
 //-----------------PT2314_2配置结束-------------------//
@@ -44,8 +46,11 @@
 #elif defined(IC_PT2315)
 #define PT2314_2ADDRESS 	0x40
 #endif
-
+#ifdef PT2314_2_MAINVOLUME_U
 #define PT2314_2_MAXVOLUME				(63-MAINVOLUME_MAX)
+#else//PT2314_2_MAINVOLUME_U
+#define PT2314_2_MAXVOLUME				(63)
+#endif//PT2314_2_MAINVOLUME_U
 #define PT2314_2_MINVOLUME				0
 
 #define PT2314_2_MAXSPEAKERATTENUATORS	15

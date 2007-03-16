@@ -67,7 +67,7 @@ void M62429PUpdateAll()
 {
 	uint8 i;
 	uint8 bc;
-	uint8 vol;
+	u8 vol;
 	//天哪居然要和I2C公用SDA
 	IICDisable();
 	//dat out 0
@@ -99,15 +99,16 @@ void M62429PUpdateAll()
 		_delay_us(2);
 		setCLK();
 		//该数据了
-		vol = M62429PVolumeA[i]+MainVolume;
-		if(vol>M62429P_MAXVOLUME)
+		i8 tmp = M62429PVolumeA[i];
+		if(tmp>0)
 		{
-			vol = 0;
+			tmp += 4+MainVolume;
 		}
-		else
+		else//静音
 		{
-			vol += 4;
+			tmp = 0;
 		}
+		vol = tmp;
 		vol = vol>>2|vol<<5;
 		vol|=1<<7;
 		bc = 8;

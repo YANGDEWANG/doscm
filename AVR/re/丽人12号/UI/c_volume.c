@@ -28,13 +28,14 @@ void CVolumeExe(bool aors)
 }
 void ClearMute(u8 loc)
 {
-	EepromSaveChar(loc,EepromBuffer[loc]&~(1<<7));
+	EepromSaveChar(loc,EepromBuffer[loc]&(~(1<<7)));
+	//EepromSaveChar(loc,10);
 }
-void SetMute(u8 loc)
+void  SetMute(u8 loc)
 {
 	EepromSaveChar(loc,EepromBuffer[loc]|(1<<7));
 }
-bool CheckMute(u8 loc)
+static bool inline CheckMute(u8 loc)
 {
 	return EepromBuffer[loc]&(1<<7);
 }
@@ -65,21 +66,22 @@ void SetTrackMode(u8 trackMode)
 	default:
 	case TM_5_1CH:
 		{
-			ClearMute(ESL_M62429P2VolumeR);
-			ClearMute(ESL_M62429P1VolumeL);
-			ClearMute(ESL_M62429P1VolumeR);
+			ClearMute(ESL_VolumeCC);
+			ClearMute(ESL_VolumeSL);
+			ClearMute(ESL_VolumeSR);
 			trackMode = TM_5_1CH;
 			break;
 		}
 	case TM_2_1CH:
 		{
-			SetMute(ESL_M62429P2VolumeR);
-			SetMute(ESL_M62429P1VolumeL);
-			SetMute(ESL_M62429P1VolumeR);
+			SetMute(ESL_VolumeCC);
+			SetMute(ESL_VolumeSL);
+			SetMute(ESL_VolumeSR);
 			break;
 		}
 	}
 	EepromSaveChar(ESL_TrackMode,trackMode);
+	UpdateAllVolume();
 }
 prog_char ok_delay[]=
 {
@@ -89,9 +91,18 @@ prog_char ok_delay[]=
 	0,
 };
 #define ok_P_MASK (3)
-#define SetOKDelay(okd) (PORTD&=~ok_P_MASK,PORTD|=okd)
+void SetOKDelay(u8 okdelay)
+{
+	if(okdelay>=sizeof(ok_delay))
+	{
+		okdelay = 0;
+	}
+	PORTD = (PORTD&(~ok_P_MASK))|pgm_read_byte(ok_delay+okdelay);
+	EepromSaveChar(ESL_OKDelay,okdelay);
+}
 void CVolume(bool aors)
 {
+	static u8 oldControlState;
 
 	//if(AutoControl.Step!=0)
 	//{
@@ -105,30 +116,6 @@ void CVolume(bool aors)
 	//		MainVolume = 0;
 	//	}*/
 	//	AutoControl.Step =0;
-	//}
-	//if(CS_INTPUT_SELECT==ControlState)
-	//{
-	//	switch(M62446OutputPort&M62446OUTPUTPORT_MASK)
-	//	{
-	//	case INTPUT_5_1:
-	//		{
-	//			M62446OutputportSet(INTPUT_CD);
-	//			break;
-	//		}
-	//	case INTPUT_CD:
-	//		{
-	//			M62446OutputportSet(INTPUT_AUX);
-	//			break;
-	//		}
-	//	case INTPUT_AUX:
-	//		{
-	//			M62446OutputportSet(INTPUT_5_1);
-	//			break;
-	//		}
-	//	}
-	//	//M62446Update(M62446TONE_OUTPUT);
-	//	M62446ToSound();
-	//	return;
 	//}
 	VolumeControl.Min =0;
 	VolumeControl.Max =M62429P_MAXVOLUME;
@@ -144,55 +131,50 @@ void CVolume(bool aors)
 			}
 			AutoControl.Max = MainVolume;
 			VolumeControl.Max =MAINVOLUME_MAX;
-			VolumeControl.datESL = ESL_MainVolume;
+			//VolumeControl.datESL = ESL_MainVolume;
 			break;
 		}
 	case CS_VOLUME_CC:
 		{
 			//EepromSaveChar(ESL_M62446WorkMode,M62446_WM_6CH);
-			//ClearMute(ESL_M62429P2VolumeR);
-			if(CheckMute(ESL_M62429P2VolumeR))
+			//ClearMute(ESL_VolumeCC);
+			if(CheckMute(ESL_VolumeCC))
 				goto INVALID;
-			VolumeControl.datESL = ESL_M62429P2VolumeR;
+			//VolumeControl.datESL = ESL_VolumeCC;
 			break;
 		}
 	case CS_VOLUME_SW:
 		{
 			//EepromSaveChar(ESL_M62446WorkMode,M62446WorkMode|M62446_WM_3CH);
-			ClearMute(ESL_M62429P2VolumeL);
-			VolumeControl.datESL = ESL_M62429P2VolumeL;
+			ClearMute(ESL_VolumeSW);
+			//VolumeControl.Min =-1;
+			//VolumeControl.datESL = ESL_VolumeSW;
 			break;
 		}
 	case CS_VOLUME_SL:
 		{
 			//EepromSaveChar(ESL_M62446WorkMode,M62446_WM_6CH);
-			//ClearMute(ESL_M62429P1VolumeL);
-			if(CheckMute(ESL_M62429P1VolumeL))
+			//ClearMute(ESL_VolumeSL);
+			if(CheckMute(ESL_VolumeSL))
 				goto INVALID;
-			VolumeControl.datESL = ESL_M62429P1VolumeL;
+			//VolumeControl.datESL = ESL_VolumeSL;
 			break;
 		}
 	case CS_VOLUME_SR:
 		{
 			//EepromSaveChar(ESL_M62446WorkMode,M62446_WM_6CH);
-			//ClearMute(ESL_M62429P1VolumeR);
-			if(CheckMute(ESL_M62429P1VolumeR))
+			//ClearMute(ESL_VolumeSR);
+			if(CheckMute(ESL_VolumeSR))
 				goto INVALID;
-			VolumeControl.datESL = ESL_M62429P1VolumeR;
+			//VolumeControl.datESL = ESL_VolumeSR;
 			break;
 		}
 	case CS_TREBLE:
-		{
-			VolumeControl.Min =PT2314_MINTONE;
-			VolumeControl.Max =PT2314_MAXTONE;
-			VolumeControl.datESL = ESL_PT2314Treble;
-			break;
-		}
 	case CS_BASS:
 		{
 			VolumeControl.Min =PT2314_MINTONE;
 			VolumeControl.Max =PT2314_MAXTONE;
-			VolumeControl.datESL = ESL_PT2314Bass;
+			//VolumeControl.datESL = ESL_PT2314Bass;
 			break;
 		}
 	case CS_VOLUME_ATT: 
@@ -200,7 +182,7 @@ void CVolume(bool aors)
 			VolumeControl.Min=PT2314_MINSPEAKERATTENUATORS;
 			VolumeControl.Max=PT2314_MAXSPEAKERATTENUATORS;
 			//VolumeControl.Step=1;
-			VolumeControl.datESL = ESL_PT2314SpeakerATT;
+			//VolumeControl.datESL = ESL_PT2314SpeakerATT;
 			break;
 		}
 	case CS_TRACK_MODE:
@@ -212,39 +194,40 @@ void CVolume(bool aors)
 		{
 			if(HaveMin)
 			{
+				VolumeControl.Min =PT2314_MINTONE;
+				VolumeControl.Max =PT2314_MAXTONE;
 				switch (ControlState)
 				{
-				case CS_OK_GAOYIN:
-					VolumeControl.datESL = ESL_PT2314_2Treble;
-					break;
-				case CS_OK_DEYIN:
-					VolumeControl.datESL = ESL_PT2314_2Bass;
-					break;
+					//case CS_OK_GAOYIN:
+					//	//VolumeControl.datESL = ESL_PT2314_2Treble;
+					//	break;
+					//case CS_OK_DEYIN:
+					//	//VolumeControl.datESL = ESL_PT2314_2Bass;
+					//	break;
 				case CS_OK_DELAY:
 					{
-						u8 okd = OKDelay+1;
-						if(!(okd<sizeof(ok_delay)))
-							okd=0;
-						SetOKDelay(pgm_read_byte(ok_delay+okd));
-						EepromSaveChar(ESL_OKDelay,okd);
+						SetOKDelay(OKDelay+1);
 						goto end;
 					}
 				case CS_OK_HUNXIANG:
 					{
-						VolumeControl.Max=PT2314_MAXSPEAKERATTENUATORS;
-						VolumeControl.Min=PT2314_MINSPEAKERATTENUATORS;
-						VolumeControl.datESL=ESL_PT2314_2SpeakerATT;
+						VolumeControl.Max=0;
+						VolumeControl.Min=-15;
+						//VolumeControl.datESL=ESL_PT2314_2SpeakerATT;
 						break;
 					}
 				case CS_OK_VOLUME:
 					{
-						VolumeControl.datESL=ESL_PT2314_2Volume;
+						VolumeControl.Max =PT2314_2_MAXVOLUME;
+						VolumeControl.Min =0;
+						//VolumeControl.datESL=ESL_PT2314_2Volume;
+						VolumeControl.Step=2;
 						break;
 					}
-				default:
+					/*default:
 					{
-						goto INVALID;
-					}
+					goto INVALID;
+					}*/
 				}
 			}
 			else
@@ -255,28 +238,14 @@ void CVolume(bool aors)
 
 
 	}
-
-	/*if(ControlState == CS_TREBLE||ControlState == CS_BASS)
+	if(oldControlState!=ControlState)
 	{
-	VolumeControl.Min =PT2314_MINTONE;
-	VolumeControl.Max =PT2314_MAXTONE;
-	if(ControlState == CS_TREBLE)
-	{
-	VolumeControl.datESL = ESL_PT2314Treble;
+		oldControlState=ControlState;
+		return;
 	}
-	else
-	{
-	VolumeControl.datESL = ESL_PT2314Bass;
-	}
-	}*/
-
+	
+	VolumeControl.datESL=ControlState;
 	CVolumeExe(aors);
-
-	//Í£Autoc
-	//	AutoControl.Step = 0;
-	//È¡Ïû½ûÒô
-	//M62446MuteUtility = M62446MIN_MUTEUTILITY;
-	//M62446Mute = false;
 end:
 	UpdateAllVolume();
 	return;
@@ -289,11 +258,11 @@ void UpdateAllVolume()
 	if(MainVolume==0)
 	{
 		offjj();
-		SetMute(ESL_M62429P2VolumeL);
+		SetMute(ESL_VolumeSW);
 	}
 	else
 	{
-		ClearMute(ESL_M62429P2VolumeL);
+		ClearMute(ESL_VolumeSW);
 		onjj();
 	}
 	M62429PUpdateAll();
@@ -311,7 +280,7 @@ void SetIntput(u8 intput)
 		off5_1();
 	MainVolume = 1;
 	UpdateAllVolume();
-	AutoControl.Step = 2;
+	AutoControl.Step = 4;
 }
 //bool Muteing;
 //bool Talling;

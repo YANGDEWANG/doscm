@@ -47,6 +47,7 @@ irc PROGMEM irc_com[IRC_MAX] =
 	IRC_reverberationsub	,
 	IRC_CHMode2_1,
 	IRC_CHMode5_1,
+	IRC_ok_preestablish,
 	IRC_null,
 };
 #if 1//ÀöÈË
@@ -102,7 +103,7 @@ prog_char irc_table2[] =
 	IRC_NULL	,			//	0x4A
 	IRC_NULL	,			//	0x4B
 	IRC_NULL	,			//	0x4C
-	IRC_PINGPU	,			//	0x4d
+	IRC_OK_PREESTABLISH,	//	0x4d
 	IRC_DIYINADD 	,		//	0x4e
 	IRC_SWSUB	,			//	0x4f
 	IRC_NULL	,			//	0x50
@@ -196,6 +197,39 @@ prog_char irc_table2[] =
 	IRC_VCD	,				//	0x5f
 };
 #endif
+prog_char soundfield[]=
+{
+	//T,B
+	0,0,
+	5,0,
+	0,5,
+	5,5,
+	5,-5,
+	-5,5,
+};
+prog_char ssPRE[]="PRE";
+void IRC_ok_preestablish()
+{
+	static u8 OKPreestablish;
+	noCallShowState = true;
+	if(HaveMin)
+	{
+	OKPreestablish++;
+	if(OKPreestablish>6)
+		OKPreestablish = 0;
+	SetOKDelay(OKPreestablish>>1);
+	EepromSaveChar(ESL_OK_HUNXIANG,-7);
+	EepromSaveChar(ESL_PT2314_2Bass,pgm_read_byte(soundfield+OKPreestablish));
+	EepromSaveChar(ESL_PT2314_2Treble,pgm_read_byte(soundfield+OKPreestablish+1));
+
+	ShowStringAndI8_P2(ssOK_,ssPRE,OKPreestablish);
+	PT2314_2UpdateAll();
+	}
+	else
+	{
+		ShowStringALL_P(ssINVALID);
+	}
+}
 void IRC_CHMode2_1()
 {
 	SetTrackMode(TM_2_1CH);
@@ -218,17 +252,8 @@ void IRC_ac_3  			()
 //{
 //	IRC_aux();
 //}
-prog_char soundfield[]=
-{
-	//T,B
-	0,0,
-	5,0,
-	0,5,
-	5,5,
-	5,-5,
-	-5,5,
-};
-prog_char effect[]="EFFECT";
+
+prog_char ssEFFECT[]="EFFECT";
 void IRC_soundfield		()
 {
 	static uint8 sf = 0;
@@ -243,7 +268,7 @@ void IRC_soundfield		()
 	EepromSaveChar(ESL_PT2314Bass,pgm_read_byte(soundfield+sf2));
 	EepromSaveChar(ESL_PT2314Treble,pgm_read_byte(soundfield+sf2+1));
 	noCallShowState = true;
-	ShowStringAndI8_P2(effect,ssnull,sf);
+	ShowStringAndI8_P2(ssEFFECT,ssnull,sf);
 	PT2314UpdateAll();
 }
 void IRC_aux			()
@@ -251,11 +276,13 @@ void IRC_aux			()
 	SetIntput(INTPUT_AUX);
 	ShowIntput(INTPUT_AUX);
 }
-extern	void IniDev();
 void IRC_reset  		()
 {
 	EepromSetDefEX();
-	((irc)0)();
+	UpdateAllVolume();
+	noCallShowState = true;
+	noInUserEvent=true;
+	//((irc)0x0000)();
 	//IniDev();
 	//iniPoll();
 }
@@ -327,17 +354,21 @@ void IRC_right			()
 }
 void IRC_mute 			()
 {
+	const prog_char *ss = ssON;
+	AutoControl.Step=-3;
 	if(Mute)
 	{
-		AutoControl.Step=1;
-		ShowString_P2(ssMUTE_,ssOFF,POINTVFDDISPLAY_X_C);
+		AutoControl.Step=3;
+		ss = ssOFF;
+		//ShowString_P2(ssMUTE_,ssOFF,POINTVFDDISPLAY_X_C);
 	}
-	else
-	{
-		AutoControl.Step=-3;
-		ShowString_P2(ssMUTE_,ssON,POINTVFDDISPLAY_X_C);
-		//InUserEventONAutoExit();
-	}
+	//else
+	//{
+	//	
+	//	//ShowString_P2(ssMUTE_,,POINTVFDDISPLAY_X_C);
+	//	//InUserEventONAutoExit();
+	//}
+	ShowString_P2(ssMUTE_,ss,POINTVFDDISPLAY_X_C);
 	noCallShowState = true;
 	Mute = !Mute;
 	/*if(M62446Mute)

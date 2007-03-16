@@ -34,7 +34,7 @@
 #define IC_PT2315
 #define PT2314_EXCHANGE_LR	//定义交换左右声道
 #define MAINVOLUME_U		//定义使用主音量控制
-#define MAINVOLUME_MAX 40	//主音量的最大值他应该小于各个声道控制的最大音量值
+#define MAINVOLUME_MAX 62	//主音量的最大值他应该小于各个声道控制的最大音量值
 //定义得以保存PT2314设置到EEPROM
 #define SAVE_PT2314_SETTING
 //-----------------PT2314配置结束-------------------//
@@ -93,7 +93,7 @@ extern uint8 PT2314Loudness;
 #define PT2314Bass			(int8)EepromBuffer[ESL_PT2314Bass]
 #define PT2314Treble		(int8)EepromBuffer[ESL_PT2314Treble]
 #define PT2314SpeakerATT	(int8) EepromBuffer[ESL_PT2314SpeakerATT]
-#define PT2314Loudness		(uint8)EepromBuffer[ESL_PT2314Loudness]
+#define PT2314Loudness		EepromBuffer[ESL_PT2314Loudness]
 #endif//SAVE_PT2314_SETTING
 
 extern bool  PT2314Mute;	

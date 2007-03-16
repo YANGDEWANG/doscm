@@ -160,6 +160,48 @@ void WindowCalc(int16 Win_Array[], uint8 SE_data)
 // half of this array is stored, to save code space. The second half is
 // assumed to be a mirror image of the first half.
 //
+#if 1//size 
+void Bit_Reverse(int16 BR_Array[])
+{
+#if (NUM_FFT >= 512)
+	uint16 swapA, swapB, sw_cnt; // Swap Indices
+#endif
+#if (NUM_FFT <= 256)
+	uint8 swapA, swapB, sw_cnt; // Swap Indices
+#endif
+
+	int16 TempStore;
+	bool first;
+	i16 *aP,*bP;
+	// Loop through locations to swap
+	for (sw_cnt = 1; sw_cnt < NUM_FFT/2; sw_cnt++)
+	{
+		first = true;
+		swapA = sw_cnt; // Store current location
+		swapB = pgm_read_byte(BRTable+sw_cnt)*2;//BRTable[sw_cnt] * 2; // Retrieve bit-reversed index
+re:
+		if (swapB > swapA) // If the bit-reversed index is
+		{ // larger than the current index,
+aP=&BR_Array[swapA];
+bP=&BR_Array[swapB];
+TempStore=*aP;
+*aP=*bP;
+*bP=TempStore;
+			//TempStore = BR_Array[swapA]; // the two data locations are
+			//BR_Array[swapA] = BR_Array[swapB]; // swapped. Using this comparison
+			//BR_Array[swapB] = TempStore; // ensures that locations are only
+		} // swapped once, and never with
+		// themselves
+		swapA += NUM_FFT/2; // Now perform the same operations
+		swapB++; // on the second half of the data
+		if(first)
+		{
+			first = false;
+			goto re;
+		}
+	}
+} 
+#else// END Bit Reverse Order Sort
 void Bit_Reverse(int16 BR_Array[])
 {
 #if (NUM_FFT >= 512)
@@ -191,7 +233,8 @@ void Bit_Reverse(int16 BR_Array[])
 			BR_Array[swapB] = TempStore;
 		}
 	}
-} // END Bit Reverse Order Sort
+} 
+#endif
 //-----------------------------------------------------------------------------
 // Int_FFT
 //-----------------------------------------------------------------------------
@@ -286,7 +329,7 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 		indexA+=2;//my add
 		indexB+=2;//my add
 	}
-	memset(ImArray,0,NUM_FFT*sizeof(int16));
+	dwmemset(ImArray,0,NUM_FFT*sizeof(int16));
 	//g_cnt = 0;
 	//while(g_cnt < NUM_FFT)
 	//{
@@ -483,10 +526,10 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 	uint8 indexA, indexB; // locations for each calculation
 #endif
 	uint16 group = NUM_FFT/4, stage = 2;
-	int32 CosVal, SinVal;
-	int32 TempReA, TempReB;
-	int32 TempImA, TempImB,  TempReA2, TempReB2;
-	IBALONG ReTwid, ImTwid, TempL;
+	int16 CosVal, SinVal;
+	int16 TempReA, TempReB;
+	int16 TempImA, TempImB,  TempReA2, TempReB2,TempImA2;
+	IBALONG ReTwid, ImTwid;
 	// FIRST STAGE - optimized for REAL input data only. This will set all
 	// Imaginary locations to zero.
 	//
@@ -504,22 +547,22 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 		//indexB = indexA + 1;//my c
 		//TempReA = ReArray[indexA];
 		//TempReB = ReArray[indexB];
-		TempReA = *++ReArrayPA;
-		TempReB = *++ReArrayPB;
+		TempReA = (*++ReArrayPA)>>1;
+		TempReB = (*++ReArrayPB)>>1;
 
 		// Calculate new value for ReArray[indexA]
-		TempL.l = (int32)TempReA + TempReB;
-		TempReA2 = TempL.l >> 1;
+		//TempL.l = (int32)TempReA + TempReB;
+		//TempReA2 = TempL.l >> 1;
 		// Calculate new value for ReArray[indexB]
-		TempL.l = (int32)TempReA - TempReB;
-		*ReArrayPB++ = TempL.l >> 1;
-		*ReArrayPA++ = TempReA2;
+		//TempL.l = (int32)TempReA - TempReB;
+		*ReArrayPB++ = TempReA - TempReB;
+		*ReArrayPA++ = TempReA + TempReB;
 
 
 		//indexA+=2;//my add
 		//indexB+=2;//my add
 	}
-	memset(ImArray,0,NUM_FFT*sizeof(int16));
+	dwmemset(ImArray,0,NUM_FFT*sizeof(int16));
 	//i16 *ImArrayPA;
 	//i16 *ImArrayPB;
 	indexB=NUM_FFT;
@@ -540,22 +583,31 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 				{
 					if(sin_index == 0)//½»»»TempReB£¬TempImB£»
 					{
-						TempL.l = TempReB;
+						TempImA2 = TempReB;
 						TempReB = -TempImB;
-						TempImB = TempL.l;
+						TempImB = TempImA2;
 					}
-					TempL.l = (int32)TempReA - TempImB;
+					TempReA>>=1;
+					TempImB>>=1;
+					TempImA>>=1;
+					TempReB>>=1;
+					TempReB2=TempReA-TempImB;
+					TempReA2=TempReA+TempImB;
+					TempImB=TempImA+TempReB;
+					/*TempL.l = (int32)TempReA - TempImB;
 					TempReB2 = TempL.l >> 1;
 					TempL.l = (int32)TempReA + TempImB;
 					TempReA2 = TempL.l >> 1;
 					TempL.l = (int32)TempImA + TempReB;
-					TempImB = TempL.l >> 1;
+					TempImB = TempL.l >> 1;*/
+
 					if(sin_index==0)
 					{
 						TempReB = TempImB;
 					}
-					TempL.l = (int32)TempImA - TempReB;
-					TempImA = TempL.l >> 1;
+					//TempL.l = (int32)TempImA - TempReB;
+					//TempImA = TempL.l >> 1;
+					TempImA=TempImA - TempReB;
 				}
 				else
 				{
@@ -578,6 +630,25 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 						((int32)TempImB * SinVal);
 					ImTwid.l = ((int32)TempImB * CosVal) -
 						((int32)TempReB * SinVal);
+#if 1
+					/*TempL.i[0] = 0;
+					TempL.i[1] = TempReA;
+					ReTwid.l += TempL.l>>1;*/
+
+					TempReA2 = ReTwid.i[1]+(TempReA>>1);
+					//TempL.l -= ReTwid.l;
+					//TempReB2 = TempL.i[1];
+					TempReB2=TempReA-TempReA2;
+					//TempL.i[0] = 0;
+					//TempL.i[1] = TempImA;
+					//ImTwid.l += TempL.l>>1;
+					//TempImA = ImTwid.i[1];
+					TempImA2=ImTwid.i[1]+(TempImA>>1);
+					//TempL.l -= ImTwid.l;
+					//TempImB = TempL.i[1];
+					TempImB = TempImA-TempImA2;
+					TempImA=TempImA2;
+#else
 					TempL.i[0] = 0;
 					TempL.i[1] = TempReA;
 					ReTwid.l += TempL.l>>1;
@@ -590,8 +661,9 @@ void Int_FFT(int16 ReArray[], int16 ImArray[])
 					TempImA = ImTwid.i[1];
 					TempL.l -= ImTwid.l;
 					TempImB = TempL.i[1];
-					if ((TempL.l < 0)&&(TempL.i[0]))
-						TempImB++;
+#endif
+					//if ((TempL.l < 0)&&(TempL.i[0]))//dewang
+					//	TempImB++;
 				}
 				ReArray[indexA] = TempReA2;
 				ReArray[indexB] = TempReB2;

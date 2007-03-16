@@ -84,9 +84,9 @@
 #endif
 
 //--------------------------SPI口配置_END----------------------------//
-#define MainVolume ((u8)EepromBuffer[ESL_MainVolume])
+#define MainVolume (EepromBuffer[ESL_MainVolume])
 #define MAINVOLUME_U		//定义使用主音量控制
-#define MAINVOLUME_MAX 40	//主音量的最大值他应该小于各个声道控制的最大音量值
+#define MAINVOLUME_MAX 62	//主音量的最大值他应该小于各个声道控制的最大音量值
 
 //-------------------PT2314配置---------------------//
 #define PT2314_CFG
@@ -102,14 +102,15 @@
 //选择一种IC
 //#define IC_PT2314_2
 #define IC_PT2315
-//#define PT2314_2_EXCHANGE_LR//定义交换左右声道
+#define PT2314_2_EXCHANGE_LR	//定义交换左右声道
+//#define PT2314_2_DONT_ATTL		//定义控制平衡时不控制L声道
 //定义得以保存PT2314_2设置到EEPROM
 #define SAVE_PT2314_2_SETTING
 //-----------------PT2314_2配置结束-------------------//
 ////-------------------M62429P配置---------------------//
 //#define M62429P_CFG
 ////要禁音吧音量最高位设1
-////注意ESL_M62429P1VolumeL在EepromBuffer中必须为M62429P数据的开始
+////注意ESL_VolumeSL在EepromBuffer中必须为M62429P数据的开始
 //#define M62429P_PORT	D
 //#define M62429P_DATP	3
 //#define M62429P_SCKPA	{4,5}//定义多个M62429P的sck引脚用数组初始化语法
@@ -172,7 +173,7 @@ typedef int8 IndexScreenLine;
 //-------------------M62429P配置---------------------//
 #define M62429P_CFG
 //要禁音吧音量最高位设1
-//注意ESL_M62429P1VolumeL在EepromBuffer中必须为M62429P数据的开始
+//注意ESL_VolumeSL在EepromBuffer中必须为M62429P数据的开始
 
 #ifdef __AVR_ATmega16__
 #define M62429P_PORT		C
@@ -188,6 +189,11 @@ typedef int8 IndexScreenLine;
 #define M62429P_SCK2P		3
 //定义得以保存M62429P设置到EEPROM
 #define SAVE_M62429P_SETTING
+#if !defined(SAVE_M62429P_SETTING)
+extern uint8 M62429PVolumeA[];
+#else//SAVE_M62429P_SETTING
+#define M62429PVolumeA		(EepromBuffer+ESL_VolumeSL)
+#endif//SAVE_M62429P_SETTING
 //-----------------M62429P配置结束-------------------//
 //---------------------FFT 配置----------------------//
 #define FFT_CFG
@@ -204,7 +210,7 @@ typedef int8 IndexScreenLine;
 //---------------------ADC配置--------------------------//
 #define ADC_CFG
 #define ADC_MUXCFG			(ADC_REFS_AVCC|_BV(ADLAR))
-#define ADC_SAMPLE_COUNT	72
+#define ADC_SAMPLE_COUNT	64
 #define ADC_PS				ADC_PS_32
 //--------------------ADC配置完-------------------------//
 #define INTPUT_DVD 0
@@ -216,8 +222,11 @@ typedef int8 IndexScreenLine;
 //-----------------IO配置结束------------------------//
 #define off5_1()	(PORTB&=~(1<<0))
 #define on5_1()		(PORTB|=(1<<0))
+#define offfan()	(PORTB&=~(1<<1))
+#define onfan()		(PORTB|=(1<<1))
 #define offSound()	(PORTD|=(1<<4))
 #define onSound()	(PORTD&=~(1<<4))
+#define checkSound() (!(PORTD&(1<<4)))
 #define offjj()	(PORTD|=(1<<7))
 #define onjj()	(PORTD&=~(1<<7))
 #ifdef __AVR_ATmega16__
