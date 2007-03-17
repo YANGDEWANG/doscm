@@ -11,6 +11,7 @@ typedef struct _IRData
 }IRData;
 enum IC_NAME
 {
+	IC_NULL,
 	IC_LC7461,
 	IC_LC7464,
 	IC_PT2222,
@@ -28,7 +29,7 @@ enum IC_NAME
 	IC_SC50462,
 	IC_SC50560,
 	IC_M50119,
-	IC_NULL,
+	IC_MAX,
 };
 enum IR_DEV_STATE
 {

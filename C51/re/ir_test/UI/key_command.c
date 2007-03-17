@@ -64,7 +64,7 @@ static void loadRecordHead()
 	At24c02Choice = 0;
 	Read24c02(CurrentRecord*RECORDHEAD_EEPROM_SIZE,RecordHead.dat,sizeof(IRRecordHead));
 	MultiCustomCode = RecordHead.RecordHead.MultiCustomCode;
-	if(RecordHead.RecordHead.ICName>IC_NULL)
+	if(RecordHead.RecordHead.ICName>=IC_MAX)
 		RecordHead.RecordHead.ICName=IC_NULL;
 }
 static void saveRecordHead()
@@ -189,6 +189,7 @@ static void updown(bool ud)
 			ShowIrInformation();
 			//ToStringWithU(dislinebuf,IrCompGroup*sizeof(IrKeyA)+irkeyC);
 			//ShowString(dislinebuf,6,2);
+			ShowUint8(6,0);
 			ShowUint8(7,IrCompGroup*sizeof(IrKeyA)+irkeyC);
 			//UpdateDisplay();
 			caShowState = true;
@@ -316,15 +317,15 @@ void PollingKey60ms()
 							//UpdateDisplay();
 							caShowState = true;
 						}
-						else//清除记录重新开始//结束纪录并保存
+						else//清除记录重新开始
 						{
 
 							//RecordHead.RecordHead.Check = 0;
 							MultiCustomCode = false;
 							memset(RecordHead.dat,0,sizeof(RecordHead));
 							IrCompGroup=irkeyC=0;
-							WorkState = WS_IR_RECORD;
-							endRecord();//清除记录
+							//WorkState = WS_IR_RECORD;
+							//endRecord();//清除记录
 							//WorkState = WS_STANDARD;
 						}
 						break;

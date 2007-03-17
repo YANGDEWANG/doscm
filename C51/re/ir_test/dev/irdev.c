@@ -35,6 +35,7 @@ uint16 getCurrentTime()
 #define CurrentTime  getCurrentTime()
 prog_char * code ICNameS[]=
 {
+	"UN IC",
 	"LC7461",
 	//HS7461			
 	//引导1，	用户13，	用户反13，	键8，键反8ok
@@ -87,8 +88,6 @@ prog_char * code ICNameS[]=
 	"M50119",
 	//M50119
 	//
-
-	"UN IC",
 	//mitc8d8
 	//upd6124//upd6124-d7c8//d7c13
 	//m50560
