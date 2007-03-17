@@ -324,7 +324,7 @@ void PollingKey60ms()
 							memset(RecordHead.dat,0,sizeof(RecordHead));
 							IrCompGroup=irkeyC=0;
 							WorkState = WS_IR_RECORD;
-							//endRecord();
+							endRecord();//Çå³ý¼ÇÂ¼
 							//WorkState = WS_STANDARD;
 						}
 						break;
