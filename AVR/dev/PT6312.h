@@ -1,9 +1,9 @@
 #ifndef _PT6312_H_
 #define _PT6312_H_
 #include <configure.h>
-
-//------------------------------PT6312配置-------------------------//
 #ifndef PT6312_CFG
+//------------------------------PT6312配置-------------------------//
+
 #define PT6312_CFG
 #define PT6312_DISPLAY_MODE	0x02						//设置为6区 16段
 #define PT6312_MEMORY_SIZE	(PT6312_DISPLAY_MODE+4)*2	//被使用的储蓄空间大小
@@ -15,14 +15,11 @@
 #define PT6312_KEY_SCAN_AMOUNT		1					//需同时处理的按键按下数目
 #define PT6312_SPI_FOSC				SPI_FOSC_16			//选择SPI速度
 //定义数据接口引脚
-//pin def
-#ifndef PT6312_POPT
 #define PT6312_POPT	B
 #define	PT6312_STB	4
-#endif//SPI_POPT
-#endif//PT6312_CFG
-//------------------------------PT6312配置-END----------------------//
 
+//------------------------------PT6312配置-END----------------------//
+#endif//PT6312_CFG
 
 //------------------------------------------------------------------//
 //扫描按键返

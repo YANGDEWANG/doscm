@@ -83,10 +83,18 @@ _delay_loop(del,_CPU_PER_US_INSTRUCTION_/2+1,3);
 }
 uint8 TM1618ReadKey()		
 {
-	uint8 data;
+	uint8 dat=0,dat2,i;
 	clSTB();
 	VSPI2_MasterTransmitLSB(READ_KEY);//TW:1us
-	data = VSPI2_MasterTransmitLSB(0xff);
+	i=3;
+	do
+	{
+		dat2 = VSPI2_MasterTransmitLSB(0xff);
+		dat=dat<<2;
+		dat|=dat2&(1<<1);
+		if(dat2&1<<4)
+			dat++;
+	}while(--i);
 	setSTB();
-	return;
+	return dat;
 }

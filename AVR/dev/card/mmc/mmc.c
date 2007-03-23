@@ -38,9 +38,9 @@ VOLUME_INFO_TYPE mmc_info;
 //{
 //	b32 baddr;
 //	baddr.b32_1 = add << BLOCK_SIZE_EX2; //addr = addr * 512 
-//	mmc_cmd[1] = baddr.b8_4.b8_4;
-//	mmc_cmd[2] = baddr.b8_4.b8_3;
-//	mmc_cmd[3] = baddr.b8_4.b8_2;
+//	mmc_cmd[1] = baddr.b8_3.b8_3;
+//	mmc_cmd[2] = baddr.b8_3.b8_2;
+//	mmc_cmd[3] = baddr.b8_3.b8_1;
 //}
 #if 0
 //****************************************************************************
@@ -267,33 +267,6 @@ Bytes ：块字节数
 bool MMCReadBlock(uint8 *Buffer,uint16 Bytes)
 {  
 	return MMCReadBlockAt(Buffer,Bytes,0,Bytes);
-	//uint16 i; 
-	//uint8 retry;
-	////Read Start Byte form MMC/SD-Card (FEh/Start Byte)
-	//retry=0;
-	//while (Read_Byte_MMC() != 0xfe)
-	//{
-	//	retry++;
-	//	if(retry==100) 
-	//	{
-	//		MMC_Disable();
-	//		return(false); //block write Error!
-	//	}
-	//};
-
-	////Write blocks(normal 512Bytes) to MMC/SD-Card
-	//for (i=0;i<Bytes;i++)
-	//{
-	//	*Buffer++ = Read_Byte_MMC();
-	//}
-
-	////CRC-Byte
-	//Read_Byte_MMC();//CRC - Byte 
-	//Read_Byte_MMC();//CRC - Byte
-
-	////set MMC_Chip_Select to high (MMC/SD-Card invalid)
-	//MMC_Disable();
-	//return(true);
 }
 /****************************************************************************
 读取扇区（512字节）
@@ -322,14 +295,14 @@ u32 MMCReadu32(u32 sector,u16 offset)
 {	
 	u8 buf[4];
 	b32 b;
-	b.b32_1=0;
+//	b.b32_1=0;
 	if(MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0)==0
 		&&MMCReadBlockAt(buf,512,offset,4))
 	{
-		b.b8_4.b8_1=	buf[0];
-		b.b8_4.b8_2=	buf[1];
-		b.b8_4.b8_3=	buf[2];
-		b.b8_4.b8_4=	buf[3];
+		b.b8_4.b8_0=	buf[0];
+		b.b8_4.b8_1=	buf[1];
+		b.b8_4.b8_2=	buf[2];
+		b.b8_4.b8_3=	buf[3];
 	}
 	MMC_Disable();
 	return b.b32_1;
@@ -343,12 +316,12 @@ u16 MMCReadu16(u32 sector,u16 offset)
 {	
 	u8 buf[2];
 	b16 b;
-	b.b16_1=0;
+//	b.b16_0=0;
 	if(MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0)==0
 		&&MMCReadBlockAt(buf,512,offset,2))
 	{
-		b.b8_2.b8_1=	buf[0];
-		b.b8_2.b8_2=	buf[1];
+		b.b8_2.b8_0=	buf[0];
+		b.b8_2.b8_1=	buf[1];
 	}
 	MMC_Disable();
 	return b.b16_1;
@@ -362,7 +335,7 @@ u8 MMCReadu8(u32 sector,u16 offset)
 {	
 	u8 buf[1]={0};
 	MMCWriteCommand(MMC_READ_SINGLE_BLOCK,sector<<9,0);
-	MMCReadBlockAt(buf,512,offset,2);
+	MMCReadBlockAt(buf,512,offset,1);
 	MMC_Disable();
 	return buf[0];
 }

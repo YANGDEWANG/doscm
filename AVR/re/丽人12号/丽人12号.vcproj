@@ -23,9 +23,9 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MyMakeFile all"
-				ReBuildCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MyMakeFile clean&#x0D;&#x0A;make MyMakeFile all"
-				CleanCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MyMakeFile clean"
+				BuildCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MakeFile all"
+				ReBuildCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MakeFile clean&#x0D;&#x0A;make MakeFile all"
+				CleanCommandLine="cd default&#x0D;&#x0A;set path=G:\WinAVR\bin;G:\WinAVR\utils\bin;c:\WinAVR\bin;c:\WinAVR\utils\bin;&#x0D;&#x0A;make MakeFile clean"
 				Output=""
 				PreprocessorDefinitions="__AVR_ATmega16__;CH_DIS1_PROJ"
 				IncludeSearchPath="&quot;$(ProjectDir)system&quot;;&quot;$(ProjectDir)dev&quot;;&quot;$(ProjectDir)cfg&quot;;&quot;$(ProjectDir)&quot;;C:\WinAVR\avr\include\util;C:\WinAVR\avr\include\compat;C:\WinAVR\avr\include\avr;C:\WinAVR\avr\include;&quot;$(SolutionDir)avr\dev&quot;;&quot;$(SolutionDir)avr\system&quot;;&quot;$(SolutionDir)avr\cfg&quot;"

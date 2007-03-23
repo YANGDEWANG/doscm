@@ -26,6 +26,7 @@
 #define FAT16_MASK      0x0000ffff      // FAT16掩码
 #define FAT32_MASK      0x0fffffff      // FAT32掩码
 
+//不要更改下面的数值因为它不仅参与比较运算
 #define FAT12           0
 #define FAT16           1
 #define FAT32           2
@@ -76,15 +77,15 @@ typedef struct PART_SECTOR{
 //系统引导扇区(DOS BOOT RECORD)DBR结构
 
 typedef struct BOOT_SECTOR710{
-	u8	bsJump[3];						// 跳转指令
-	char	bsOEMName[8];					// 厂商标志和OS版本号
-	char	bsBPB[53];						// BIOS 参数块
-	char	bsExt[26];						// 扩展BPB
-	char	bsBootCode[418];			// 引导扇区代码
+	u8	bsJump[3];				// 跳转指令
+	char	bsOEMName[8];		// 厂商标志和OS版本号
+	char	bsBPB[53];			// BIOS 参数块
+	char	bsExt[26];			// 扩展BPB
+	char	bsBootCode[418];	// 引导扇区代码
 	u8	bsBootSectSig2;				
 	u8	bsBootSectSig3;
-	u8	bsBootSectSig0;				// 引导扇区签名0x55
-	u8	bsBootSectSig1;				// 引导扇区签名0xAA
+	u8	bsBootSectSig0;			// 引导扇区签名0x55
+	u8	bsBootSectSig1;			// 引导扇区签名0xAA
 #define BOOTSIG0        0x55
 #define BOOTSIG1        0xaa
 #define BOOTSIG2        0
@@ -119,31 +120,31 @@ typedef struct BPB710_{
 
 // 目录或文件入口地址结构
 typedef struct DIR_ENTRY{
-		u8		deName[8];          // 文件名
-#define SLOT_EMPTY      0x00            // 目录项为空
-#define SLOT_E5         0x05            
-#define SLOT_DELETED    0xe5            // 文件已被删除
-		u8		deExtension[3];     // 扩展名
-		u8		deAttributes;       // 文件属性
-#define ATTR_NORMAL     0x00            // 读写
-#define ATTR_READONLY   0x01            // 只读
-#define ATTR_HIDDEN     0x02            // 隐藏
-#define ATTR_SYSTEM     0x04            // 系统文件
-#define ATTR_VOLUME     0x08            // 卷标文件
-#define ATTR_LONG_FILENAME	0x0f		// 长文件名文件			    
-#define ATTR_DIRECTORY  0x10            // 子目录文件
-#define ATTR_ARCHIVE    0x20            // 归档文件
-		u8        deLowerCase;        // 系统保留
-#define LCASE_BASE      0x08            
-#define LCASE_EXT       0x10            
-		u8        deCHundredth;       // 文件创建时间的10MS
-		u8        deCTime[2];         // 文件创建时间
-		u8        deCDate[2];         // 文件创建日期
-		u8        deADate[2];         // 文件最近访问日期
-		u16        deHighClust; 	    // 文件起始簇号的高16位
-		u8        deMTime[2];         // 文件最近修改时间
-		u8        deMDate[2];         // 文件最近修改日期
-		u16       deStartCluster;     // 文件起始簇号的低16位
+		u8		deName[8];     		// 文件名
+#define SLOT_EMPTY      0x00   		// 目录项为空
+#define SLOT_E5         0x05   		 
+#define SLOT_DELETED    0xe5   		// 文件已被删除
+		u8		deExtension[3];		// 扩展名
+		u8		deAttributes;  		// 文件属性
+#define ATTR_NORMAL     0x00   		// 读写
+#define ATTR_READONLY   0x01   		// 只读
+#define ATTR_HIDDEN     0x02   		// 隐藏
+#define ATTR_SYSTEM     0x04   		// 系统文件
+#define ATTR_VOLUME     0x08   		// 卷标文件
+#define ATTR_LONG_FILENAME	0x0f	// 长文件名文件			    
+#define ATTR_DIRECTORY  0x10    	// 子目录文件
+#define ATTR_ARCHIVE    0x20    	// 归档文件
+		u8        deLowerCase;  	// 系统保留
+#define LCASE_BASE      0x08    	  
+#define LCASE_EXT       0x10    	  
+		u8        deCHundredth; 	// 文件创建时间的10MS
+		u8        deCTime[2];   	// 文件创建时间
+		u8        deCDate[2];   	// 文件创建日期
+		u8        deADate[2];   	// 文件最近访问日期
+		u16       deHighClust; 		// 文件起始簇号的高16位
+		u8        deMTime[2];   	// 文件最近修改时间
+		u8        deMDate[2];   	// 文件最近修改日期
+		u16       deStartCluster;   // 文件起始簇号的低16位
 		u32       deFileSize;  	    // 文件长度
 } DIREntry;
 
@@ -234,7 +235,7 @@ fileIndex：要查找的文件的目录索引
 withName：为true通过文件名查找否则通过索引
 return	：查到文件返回True，并填写file中的其他字段
 ******************************************************/
-bool FatGetFile(Cluster DirClust,File* file,u16 fileIndex,bool withName);
+bool FatFindFile(Cluster DirClust,File* file,u16 fileIndex,bool withName);
 /******************************************************
 从文件夹中查找文件或目录
 DirClust：目录所在的族（0为根目录）

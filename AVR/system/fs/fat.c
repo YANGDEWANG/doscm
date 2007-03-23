@@ -15,11 +15,21 @@ u32 FirstDataSector;   //数据区
 u16	BytesPerSector;
 u16	SectorsPerCluster;
 u32 FirstFATSector;
+u32 FatSectorCount;
 ROOTDIR_INF	RootDir;  //目录区
 //FindFileInfo	FindInfo;
 //********************************************************************************************
+u32 FatBufferLBA;
 //读一个扇区
-#define ReadBlock(LBA) MMCReadSector(LBA,FatBuffer)
+void ReadBlock(u32 lba) 
+{
+	FatBufferLBA = lba;
+	MMCReadSector(lba,FatBuffer);
+}
+void WriteBlock(u32 lba) 
+{
+	MMCWriteSector(lba,FatBuffer);
+}
 #define ReadBlockToBuff(LBA,pbuff) MMCReadSector(LBA,pbuff)
 
 /*-----------------------------------------------------------------------
@@ -27,7 +37,7 @@ ROOTDIR_INF	RootDir;  //目录区
 -----------------------------------------------------------------------*/
 u32 fatClustToSect(u32 clust)
 {
-	return ((clust-2) * SectorsPerCluster) + FirstDataSector;
+	return ((clust-2) * SectorsPerCluster) + FirstDataSector;//簇编号从2开始
 }
 /*-----------------------------------------------------------------------
 查询一个簇所占字节数
@@ -52,13 +62,14 @@ u8 fatInit()
 	if(bpb->bpbFATsecs)
 	{
 		// bpbFATsecs非0,为FAT16,FAT表所占的扇区数在bpbFATsecs里
-		FirstDataSector	+= bpb->bpbResSectors + bpb->bpbFATs * bpb->bpbFATsecs; 
+		FatSectorCount = bpb->bpbFATsecs;
 	}
 	else
 	{
 		// bpbFATsecs是0,为FAT32,FAT表所占的扇区数在bpbBigFATsecs里
-		FirstDataSector	+= bpb->bpbResSectors + bpb->bpbFATs * bpb->bpbBigFATsecs;
+		FatSectorCount = bpb->bpbBigFATsecs;
 	}
+	FirstDataSector	+= bpb->bpbResSectors + bpb->bpbFATs * FatSectorCount; 
 	SectorsPerCluster	= bpb->bpbSecPerClust;
 	BytesPerSector		= bpb->bpbBytesPerSec;
 	FirstFATSector		= bpb->bpbResSectors + PartInfo.prStartLBA;
@@ -93,49 +104,140 @@ u8 fatInit()
 	return 1;	
 }
 
+//bool static FatFileNameComp(char const *a,char const *b)
+//{
+//	char aa[9],ba[9];
+//	aa[8]=0;
+//	ba[8]=0;
+//	memcpy(aa,a,8);
+//	memcpy(ba,b,8);
+//	strcasecmp(aa,ba);
+//}
+//bool static FatFileNameExtComp(char const *a,char const *b)
+//{}
 
+/*-----------------------------------------------------------------------
+在FAT表中查询下一个未使用簇号
+-----------------------------------------------------------------------*/
+u32 fatNextEmptyCluster(u32 cluster)
+{
+	cluster++;
+	u32 fatOffset;
+	u32 sector;
+	u16 offset;
+	b16 fat12Cluater;
+	bool fat12NextIsHbyte=false;
+	fatOffset = cluster << FatType;
+	if(FatType==FAT12)fatOffset+=cluster>>1;
+	sector = FirstFATSector + (fatOffset / BytesPerSector);	//计算FAT扇区号
+	offset = fatOffset % BytesPerSector; //计算FAT扇区号中表项的偏移地址
+	do
+	{
+		if(sector - FirstFATSector>=FatSectorCount)//最后的Fat扇区了
+			break;
+		ReadBlock(sector++);
+		while(offset<BytesPerSector)
+		{
+			switch(FatType)
+			{
+			case FAT32:
+				{
+					if((*(u32*)(FatBuffer+offset))==0)
+						return cluster;
+					else
+						offset+=4;
+					break;
+				}
+			case FAT16:
+				{
+					if((*(u16*)(FatBuffer+offset))==0)
+						return cluster;
+					else
+						offset+=2;
+					break;
+				}
+			case FAT12:
+				{
+					if(fat12NextIsHbyte)
+					{
+						fat12NextIsHbyte = false;
+						fat12Cluater.b8_2.b8_1 = FatBuffer[offset];
+					}
+					else
+					{
+						fat12Cluater.b8_2.b8_0 = FatBuffer[offset];
+						if(offset!=(BytesPerSector-1))
+						{						
+							fat12Cluater.b8_2.b8_1 = FatBuffer[offset+1];
+						}
+						else
+						{
+							fat12NextIsHbyte = true;
+							break;
+						}
+						offset++;
+					}
+					
+					if(cluster&1)
+					{   //取高12位地址
+						fat12Cluater.b16_1>>=4;
+						offset++;
+					}
+					else
+					{  //取低12位地址
+						fat12Cluater.b16_1&=0xfff;
+					}
+					if(fat12Cluater.b16_1==0)
+					{
+						return cluster;
+					}
+					break;
+				}
+			}
+			cluster++;
+		}
+		offset = 0;
+	}while(1);
+	return CLUST_EOFE;
+} 
 /*-----------------------------------------------------------------------
 在FAT表中查询下一个簇号
 -----------------------------------------------------------------------*/
 u32 fatNextCluster(u32 cluster)
 {
-	u32 nextCluster=0;
+	u32 nextCluster=CLUST_EOFS;
 	u32 fatOffset;
 	u32 sector;
 	u16 offset;
+	fatOffset = cluster << FatType;
+	if(FatType==FAT12)fatOffset+=cluster>>1;
+	sector = FirstFATSector + (fatOffset / BytesPerSector);	//计算FAT扇区号
+	offset = fatOffset % BytesPerSector; //计算FAT扇区号中表项的偏移地址
 	if(FatType==FAT32 )	// 一个表项为4bytes(32 bits)
 	{
-		fatOffset = cluster << 2;
-		sector = FirstFATSector + (fatOffset / BytesPerSector);	//计算FAT扇区号
-		offset = fatOffset % BytesPerSector; //计算FAT扇区号中表项的偏移地址
 		nextCluster=MMCReadu32(sector,offset);
-		//ReadBlock(sector);  // 读取下一个簇号	
-		//nextCluster = (*((u32*) &((char*)FatBuffer)[offset])) ;
-	}else if(FatType==FAT16){    // 一个表项为2bytes(16 bits)
-		fatOffset = cluster << 1; 	//计算FAT扇区号
-		sector = FirstFATSector + (fatOffset / BytesPerSector);
-		offset = fatOffset % BytesPerSector;//计算FAT扇区号中表项的偏移地址
+	}
+	else if(FatType==FAT16)
+	{    // 一个表项为2bytes(16 bits)
 		nextCluster=MMCReadu16(sector,offset);
-		//  	ReadBlock(sector);	
-		//		nextCluster = (*((u16*) &((char*)FatBuffer)[offset])) ;
-	}else if(FatType==FAT12){	// 一个表项为1.5bytes(12 bits)
-		fatOffset = cluster+(cluster>>1);
-		sector = FirstFATSector + (fatOffset / BytesPerSector);
-		offset = fatOffset % BytesPerSector;
-		//	ReadBlock(sector);
-		if(offset==(BytesPerSector-1)){
-			nextCluster=MMCReadu16(sector,offset-1)>>8;
-			//	nextCluster=(u32)FatBuffer[offset];	//低位
-			//		ReadBlock(sector+1);
-			nextCluster|=((MMCReadu16(sector+1,0)<<8)&0x0000ffff);
-			//		nextCluster|=(FatBuffer[0]<<8)&0x0000ffff;  //高位,必须与,否则会出现错误
-		}else{
-			nextCluster=MMCReadu16(sector,offset);
-			//	  	nextCluster =(*((u16*) &((char*)FatBuffer)[offset])) ;
+	}
+	else if(FatType==FAT12)
+	{	// 一个表项为1.5bytes(12 bits)
+		if(offset==(BytesPerSector-1))
+		{
+			nextCluster=MMCReadu8(sector,offset);
+			nextCluster|=((u16)MMCReadu8(sector+1,0)<<8);
 		}
-		if(cluster&0X00000001){   //取低12位地址
+		else
+		{
+			nextCluster=MMCReadu16(sector,offset);
+		}
+		if(cluster&0X00000001)
+		{   //取低12位地址
 			nextCluster>>=4;
-		}else{  //取高12位地址
+		}
+		else
+		{  //取高12位地址
 			nextCluster&=0x00000fff;
 		}
 	}
@@ -152,7 +254,7 @@ fileIndex：要查找的文件的目录索引
 withName：为true通过文件名查找否则通过索引
 return	：查到文件返回True，并填写file中的其他字段
 ******************************************************/
-bool FatGetFile(Cluster DirClust,File* file,u16 fileIndex,bool withName)
+bool FatFindFile(Cluster DirClust,File* file,u16 fileIndex,bool withName)
 {
 	Cluster DirSector;
 	DIREntry *dir;
@@ -190,19 +292,19 @@ bool FatGetFile(Cluster DirClust,File* file,u16 fileIndex,bool withName)
 			{
 				if(withName)
 				{
-					if(memcmp(dir->deName,file->Name,8)==0
-						&&memcmp(dir->deExtension,file->ExtensionName,3)==0)
+					if(strncasecmp(dir->deName,file->Name,8)==0
+						&&strncasecmp(dir->deExtension,file->ExtensionName,3)==0)
 					{
 						goto su;
 					}
 				}
 				else
 				{
-				if(fileIndex==0)
-				{
-					goto su;
-				}
-				fileIndex--;
+					if(fileIndex==0)
+					{
+						goto su;
+					}
+					fileIndex--;
 				}
 			}
 			dir++;
@@ -249,7 +351,7 @@ return	：查到文件返回True，并填写file中的字段
 ******************************************************/
 bool FatGetFileWithIndex(Cluster DirClust,File* file,u16 fileIndex)
 {
-	return FatGetFile(DirClust,file,fileIndex,false);
+	return FatFindFile(DirClust,file,fileIndex,false);
 }
 
 /******************************************************
@@ -260,7 +362,7 @@ return	  ：查到文件返回True，并填写file中的其他字段
 ******************************************************/
 bool FatFindFileInDirWithName(Cluster dirCluster,File *file)
 {
-	return FatGetFile(dirCluster,file,0,true);
+	return FatFindFile(dirCluster,file,0,true);
 }
 /******************************************************
 读取文件的下一个扇区（512字节）
@@ -271,7 +373,7 @@ return：成功返回True，到了文件的末尾返回false
 bool FatReadSector(File* file,u8* buffer)
 {
 	if(file->CurrentCluster==CLUST_EOFE
-	||file->FileSize<file->Position)
+		||file->FileSize<file->Position)
 	{
 		return false;
 	}
@@ -284,5 +386,10 @@ bool FatReadSector(File* file,u8* buffer)
 		file->CurrentCluster=fatNextCluster(file->CurrentCluster);
 	}
 	return true;
+}
+
+
+bool FatNewFile(File *dir,char *fileName,u8 Attributes)
+{
 }
 

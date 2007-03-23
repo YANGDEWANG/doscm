@@ -79,7 +79,9 @@ bool sendAnswer()
 }
 static bool write(uint8 add)//写一个字节到总线//失败后SCL_I2C=1,SDA_I2C=1//成功SCL_I2C=1,SDA_I2C未定
 {				    //如果失败请发送停止或重新开始信号，但也请考虑失去仲裁的情况
+#ifdef IIC_MULTI_MATER
 	bool sdav;
+#endif
 	uint8 i=8;
 	do
 	{
@@ -95,7 +97,9 @@ static bool write(uint8 add)//写一个字节到总线//失败后SCL_I2C=1,SDA_I2C=1//成功S
 		add=(add<<1);//注意：使用了C替换上面的代码请确保可以替换
 #endif
 		SDA_I2C = CY;//T.su,dat延迟250ns//数据建立时间
+#ifdef IIC_MULTI_MATER
 		sdav= CY;
+#endif
 		setSCL();//T.hgih延迟4us SCL_I2C时钟的高电平周期
 		if(!waitSCL(IIC_WAITCYCLE))
 			goto er;//等待超时	

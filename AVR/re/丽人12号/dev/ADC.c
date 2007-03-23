@@ -26,8 +26,8 @@ ISR(SIG_ADC)
 //	sei();
 	b16 tmp;
 	
-	tmp.b8_2.b8_1 = ADCL;
-	tmp.b8_2.b8_2 = ADCH;
+	tmp.b8_2.b8_0 = ADCL;
+	tmp.b8_2.b8_1 = ADCH;
 	//uint8 l = ADCL;
 	//uint8 h = ADCH;
 	ADCSample[sampleIndex] =tmp.b16_1;

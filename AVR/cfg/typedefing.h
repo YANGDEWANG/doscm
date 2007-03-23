@@ -58,9 +58,10 @@ typedef bit	bool;
 
 typedef union
 { 
-	_int8 b8_1; 
+	_int8 b8_0; 
 	struct
 	{
+		_int8 b1_0:1;
 		_int8 b1_1:1;
 		_int8 b1_2:1;
 		_int8 b1_3:1;
@@ -68,7 +69,7 @@ typedef union
 		_int8 b1_5:1;
 		_int8 b1_6:1;
 		_int8 b1_7:1;
-		_int8 b1_8:1;
+		
 	}b1_8;
 }b8;
 typedef union
@@ -76,8 +77,8 @@ typedef union
 	_int16 b16_1;
 	struct
 	{
+		_int8 b8_0;
 		_int8 b8_1;
-		_int8 b8_2;
 	}b8_2;
 }b16;
 typedef union
@@ -85,15 +86,15 @@ typedef union
 	_int32 b32_1; 
 	struct
 	{
+		_int16 b16_0;
 		_int16 b16_1;
-		_int16 b16_2;
 	}b16_2;
 	struct
 	{
+		_int8 b8_0;
 		_int8 b8_1;
 		_int8 b8_2;
 		_int8 b8_3;
-		_int8 b8_4;
 	}b8_4;
 }b32;
 //---------------------ÓĞÓÃºê------------------------------//
