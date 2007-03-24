@@ -120,11 +120,18 @@ typedef struct BPB710_{
 
 // 目录或文件入口地址结构
 typedef struct DIR_ENTRY{
-		u8		deName[8];     		// 文件名
+		//u8		deName[8];     		// 文件名
+		//u8		deExtension[3];		// 扩展名
+	union{
+		struct{
+				u8	Name[8];        // 文件名
 #define SLOT_EMPTY      0x00   		// 目录项为空
 #define SLOT_E5         0x05   		 
 #define SLOT_DELETED    0xe5   		// 文件已被删除
-		u8		deExtension[3];		// 扩展名
+				u8	Ext[3];			// 扩展名
+			}Name;
+			u8 FullName[11];
+		}Name;//文件名
 		u8		deAttributes;  		// 文件属性
 #define ATTR_NORMAL     0x00   		// 读写
 #define ATTR_READONLY   0x01   		// 只读
@@ -204,8 +211,15 @@ typedef union{
 }ROOTDIR_INF;
 
 typedef struct _FILE{
-	u8	Name[8];          // 文件名
-	u8	ExtensionName[3]; // 扩展名
+	union 
+	{
+		struct
+		{
+			u8	Name[8];          // 文件名
+			u8	Ext[3]; // 扩展名
+		}Name;
+		u8 FullName[11];
+	}Name;
 	union	
 	{
 		u8 Attribute;
@@ -242,14 +256,14 @@ DirClust：目录所在的族（0为根目录）
 fileIndex：要查找的文件的目录索引
 return	：查到文件返回True，并填写file中的字段
 ******************************************************/
-bool FatGetFileWithIndex(Cluster DirClust,File* file,u16 fileIndex);
+bool OpenFileWithIndex(Cluster DirClust,File* file,u16 fileIndex);
 /******************************************************
 从文件夹中查找文件或目录
 dirCluster：目录所在的族（0为根目录）
 file	  ：要查找的文件的文件名和扩展名
 return	  ：查到文件返回True，并填写file中的其他字段
 ******************************************************/
-bool FatFindFileInDirWithName(Cluster dirCluster,File *file);
+bool OpenFileWithName(Cluster dirCluster,File *file);
 /******************************************************
 读取文件的下一个扇区（512字节）
 file  ：要读取的文件
@@ -257,4 +271,12 @@ buffer：读取数据的储蓄buffer
 return：成功返回True，到了文件的末尾返回false
 ******************************************************/
 bool FatReadSector(File* file,u8* buffer);
+/******************************************************
+新建文件或目录
+DirClust：目录所在的族（0为根目录）
+fileName：文件名
+Attributes：文件属性
+return	：成功返回True
+******************************************************/
+bool FatNewFile(Cluster DirClust,char fileName[11],u8 Attributes);
 #endif//_SYSTEM_FS_FAT_H

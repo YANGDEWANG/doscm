@@ -108,6 +108,7 @@ void polling500ms()
 }
 #ifdef POLLING1000MS
 //uint8 buf[512];
+bool fatinited;
 void polling1000ms()
 {
 	LCDClear();
@@ -117,22 +118,25 @@ void polling1000ms()
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 	if(haveCard)
 	{
-		if(fatInit())
+		if(fatinited)
 		{
 			File f;
-			memcpy(&f.Name,"TEST    ",8);
-			memcpy(&f.ExtensionName,"TXT",3);
-if(FatFindFileInDirWithName(0,&f))
-{
-	while(FatReadSector(&f,FatBuffer));
-}
-
-		}
-	/*for(;i<512;i++)
+			FatNewFile(0,"yangdewbTXT",0);
+			/*memcpy(&f.Name,"TEST    TXT",11);
+			if(OpenFileWithName(0,&f))
 			{
-				buf[i] =i; 
-			}
-	haveCard = MMCWriteSector(0,buf);*/
+				while(FatReadSector(&f,FatBuffer));
+			}*/
+		}
+		else
+		{
+			haveCard=fatinited=fatInit();
+		}
+		/*for(;i<512;i++)
+		{
+		buf[i] =i; 
+		}
+		haveCard = MMCWriteSector(0,buf);*/
 		//if(!MMCGetVolumeInfo())
 		//{
 		//	haveCard=false;
@@ -176,7 +180,7 @@ if(FatFindFileInDirWithName(0,&f))
 static void iniPoll()
 {
 	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
-while(!MMCInit());
+	while(!MMCInit());
 	showTime();
 	LCDShowStringAt(16,"HELLO");
 	//SPIFlashSetManufacturer(SFM_Eon);
