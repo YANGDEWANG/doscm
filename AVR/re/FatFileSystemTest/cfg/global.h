@@ -1,6 +1,9 @@
 #ifndef _GLOBAL_H_
 #define _GLOBAL_H_
 #include "configure.h"
+
+void SPIToFatMode();
+void SPIToSpiFlashMode();
 //#include "user_ini.h"
 //#include <intrins.h>
 //#include <dwstd.h>

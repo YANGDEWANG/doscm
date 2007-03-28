@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "display.h"
-#include "boolean.h"
-#include "pt6312.h"
+#include "system/boolean.h"
+#include "dev/pt6312.h"
 #include "../dev/spiflash.h"
 
 #ifdef NOTIFY_DIS_CHANGE

@@ -19,7 +19,7 @@ File 1,1,<..\..\dev\at24c02.c><at24c02.c> 0x0
 File 1,1,<..\..\dev\iic.c><iic.c> 0x0 
 File 2,1,<..\..\system\Clock.c><Clock.c> 0x0 
 File 2,1,<..\..\system\delay.c><delay.c> 0x0 
-File 2,4,<..\..\lib\C51.LIB><C51.LIB> 0x459C703A 
+File 2,4,<..\..\lib\C51.LIB><C51.LIB> 0x460889CE 
 File 3,1,<.\UI\display.c><display.c> 0x0 
 File 3,1,<.\UI\MessageString.c><MessageString.c> 0x0 
 File 3,1,<.\UI\key_command.c><key_command.c> 0x0 

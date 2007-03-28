@@ -65,23 +65,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\dev\ADC.h"
+				RelativePath=".\include\dev\ADC.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\arith.h"
+				RelativePath=".\include\system\arith.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\AutoControl.h"
+				RelativePath=".\include\system\AutoControl.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\boolean.h"
+				RelativePath=".\include\system\boolean.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\Clock.h"
+				RelativePath=".\include\system\Clock.h"
 				>
 			</File>
 			<File
@@ -89,15 +89,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\system\dwstd.h"
+				RelativePath=".\include\system\dwstd.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\eeprom_ex.h"
+				RelativePath=".\include\system\eeprom_ex.h"
 				>
 			</File>
 			<File
-				RelativePath=".\system\fs\fat.h"
+				RelativePath=".\include\fs\fat.h"
 				>
 			</File>
 			<File
@@ -105,15 +105,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\system\FFT.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cfg\global.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\hd44780.h"
+				RelativePath=".\include\dev\hd44780.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\iic.h"
+				RelativePath=".\include\dev\iic.h"
 				>
 			</File>
 			<File
@@ -121,27 +125,27 @@
 				>
 			</File>
 			<File
-				RelativePath=".\dev\IR.h"
+				RelativePath=".\include\dev\IR.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\ISP.h"
+				RelativePath=".\include\dev\ISP.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\ISPEX.h"
+				RelativePath=".\include\dev\ISPEX.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\lcd.h"
+				RelativePath=".\include\dev\lcd.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\M62429P.h"
+				RelativePath=".\include\dev\M62429P.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\card\mmc\mmc.h"
+				RelativePath=".\include\dev\mmc.h"
 				>
 			</File>
 			<File
@@ -153,23 +157,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\dev\PT2314.h"
+				RelativePath=".\include\dev\PT2314.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\PT2314_2.h"
+				RelativePath=".\include\dev\PT2314_2.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\PT6312.h"
+				RelativePath=".\include\dev\PT6312.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\SPI.h"
+				RelativePath=".\include\dev\SPI.h"
 				>
 			</File>
 			<File
-				RelativePath=".\dev\STF16360EN.h"
+				RelativePath=".\include\dev\STF16360EN.h"
 				>
 			</File>
 			<File
@@ -177,7 +181,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\dev\usart.h"
+				RelativePath=".\include\dev\usart.h"
 				>
 			</File>
 		</Filter>
@@ -218,10 +222,6 @@
 			</File>
 			<File
 				RelativePath=".\system\fs\fat.c"
-				>
-			</File>
-			<File
-				RelativePath=".\system\FFT.h"
 				>
 			</File>
 			<File

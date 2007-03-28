@@ -34,7 +34,7 @@ typedef int8 	_int8;
 typedef int16	_int16;
 typedef int32	_int32;
 typedef _uchar	_uint8;
-typedef _uint	_uint16;
+typedef uint16	_uint16;
 
 #ifdef __AVR__
 #ifndef __cplusplus
@@ -106,6 +106,8 @@ typedef union
 #define GDDR(x)        GLUE(DDR, x)
 #define GPIN(x)        GLUE(PIN, x)
 #define abs(x)	(x>0?x:-x)
+#define cbi(p,b) (p&=~(1<<b))
+#define sbi(p,b) (p|=(1<<b))
 
 static void inline dwmemset(void *dst,u8 dat,u16 size)
 {

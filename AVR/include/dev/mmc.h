@@ -18,8 +18,14 @@
 #ifndef MMC_CFG
 //--------------------------MMC≈‰÷√----------------------------//
 #define MMC_CFG
-#define MMC_PORT	B
-#define MMC_CS		2	//-->MMC_CS_PIN 
+#define MMC_SOFT_SPI 1//
+#define MMC_PORT	D
+#define MMC_CS		7	//-->MMC_CS_PIN 
+#ifdef MMC_SOFT_SPI
+#define MMC_DI		5	//-->MMC_DO_PIN 
+#define MMC_DO		6	//-->MMC_DI_PIN 
+#define MMC_CLK		4	//-->MMC_CLK_PIN
+#endif//MMC_SOFT_SPI
 //------------------------MMC≈‰÷√_END---------------------------//
 
 #endif//MMC_CFG

@@ -11,6 +11,10 @@
 //----------------------FAT配置-----------------------//
 #define _SYSTEM_FS_FAT_CFG
 //#define FAT_MAX_FILE_NAME_LEN 16
+#define FAT_USE_FILE_BUFFER//定义在文件系统上建立一个临时文件，这样可以避免出现对FATBuffer的争用
+#ifdef FAT_USE_FILE_BUFFER
+#define FILE_BUFFER_NAME "FATTMPFLTMP"
+#endif
 //======================FAT配置=======================//
 #endif//_SYSTEM_FS_FAT_CFG
 //簇定义
@@ -133,14 +137,14 @@ typedef struct DIR_ENTRY{
 			u8 FullName[11];
 		}Name;//文件名
 		u8		Attributes;  		// 文件属性
-#define ATTR_NORMAL     0x00   		// 读写
-#define ATTR_READONLY   0x01   		// 只读
-#define ATTR_HIDDEN     0x02   		// 隐藏
-#define ATTR_SYSTEM     0x04   		// 系统文件
-#define ATTR_VOLUME     0x08   		// 卷标文件
-#define ATTR_LONG_FILENAME	0x0f	// 长文件名文件			    
-#define ATTR_DIRECTORY  0x10    	// 子目录文件
-#define ATTR_ARCHIVE    0x20    	// 归档文件
+#define FILE_ATTR_NORMAL     0x00   		// 读写
+#define FILE_ATTR_READONLY   0x01   		// 只读
+#define FILE_ATTR_HIDDEN     0x02   		// 隐藏
+#define FILE_ATTR_SYSTEM     0x04   		// 系统文件
+#define FILE_ATTR_VOLUME     0x08   		// 卷标文件
+#define FILE_ATTR_LONG_FILENAME	0x0f	// 长文件名文件			    
+#define FILE_ATTR_DIRECTORY  0x10    	// 子目录文件
+#define FILE_ATTR_ARCHIVE    0x20    	// 归档文件
 		u8        LowerCase;  	// 系统保留
 #define LCASE_BASE      0x08    	  
 #define LCASE_EXT       0x10    	  
@@ -152,7 +156,7 @@ typedef struct DIR_ENTRY{
 		u16       MTime;   	// 文件最近修改时间
 		u16       MDate;   	// 文件最近修改日期
 		u16       StartCluster;   // 文件起始簇号的低16位
-		u32       FileSize;  	    // 文件长度
+		u32       Size;  	    // 文件长度
 } DIREntry;
 
 // 一个扇区中的目录项数
@@ -215,8 +219,8 @@ typedef struct _FILE{
 	{
 		struct
 		{
-			u8	Name[8];          // 文件名
-			u8	Ext[3]; // 扩展名
+			u8	Name[8];         // 文件名
+			u8	Ext[3];			// 扩展名
 		}Name;
 		u8 FullName[11];
 	}Name;
@@ -232,15 +236,17 @@ typedef struct _FILE{
 			u8 IsDirectory	:1;
 			u8 IsArchive	:1;
 		}Attributes;
-	}Attributes;       // 文件属性
-	u32 StartCluster;     // 文件起始簇号
-	u32	FileSize;  	    // 文件长度
+	}Attributes;		// 文件属性
+	u32 StartCluster;	// 文件起始簇号
+	u32	Size;  			// 文件长度
 	u32	Position;
 	u32 CurrentCluster;
+	u32 DirEntrySector;
+	u8  DirEntryIndex;
 }File;
 extern u8 FatBuffer[512];
 // 可调函数   
-u8 fatInit( void);
+u8 FATInit( void);
 /******************************************************
 从文件夹中查找文件或目录
 DirClust：目录所在的族（0为根目录）
@@ -256,21 +262,21 @@ DirClust：目录所在的族（0为根目录）
 fileIndex：要查找的文件的目录索引
 return	：查到文件返回True，并填写file中的字段
 ******************************************************/
-bool OpenFileWithIndex(Cluster DirClust,File* file,u16 fileIndex);
+bool FileOpenWithIndex(Cluster DirClust,File* file,u16 fileIndex);
 /******************************************************
 从文件夹中查找文件或目录
 dirCluster：目录所在的族（0为根目录）
 file	  ：要查找的文件的文件名和扩展名
 return	  ：查到文件返回True，并填写file中的其他字段
 ******************************************************/
-bool OpenFileWithName(Cluster dirCluster,File *file);
+bool FileOpenWithName(Cluster dirCluster,File *file);
 /******************************************************
 读取文件的下一个扇区（512字节）
 file  ：要读取的文件
 buffer：读取数据的储蓄buffer
 return：成功返回True，到了文件的末尾返回false
 ******************************************************/
-bool FatReadSector(File* file,u8* buffer);
+bool FatReadSector(File* file,u8 buffer[512]);
 /******************************************************
 新建文件或目录
 DirClust：目录所在的族（0为根目录）
@@ -278,5 +284,33 @@ fileName：文件名
 Attributes：文件属性
 return	：成功返回True
 ******************************************************/
-bool FatNewFile(Cluster DirClust,char fileName[11],u8 Attributes);
+bool FileNew(Cluster DirClust,char fileName[11],u8 Attributes);
+
+/******************************************************
+写文件的Position所指扇区（512字节）并将Position后移512字节
+到了文件的末尾将扩充文件的容量，如果没有可用的空族将返回false
+注意：此方法使用FatBuffer，不能让buffer与FatBuffer重用，除非
+定义了FAT_USE_FILE_BUFFER
+file  ：要写入的文件
+buffer：数据
+return：成功返回True
+******************************************************/
+bool FatWriteSector(File* file,u8 buffer[512]);
+/******************************************************
+保存文件或目录
+注意：此方法使用FatBuffer
+file：要保存的文件
+return	：成功返回True
+******************************************************/
+bool FileSave(File* file);
+/******************************************************
+查找目录中是否存在文件
+注意：此方法使用FatBuffer
+DirClust：目录所在的族（0为根目录）
+fileName：要查找的文件名
+return	：否存返回True
+******************************************************/
+bool FileExist(Cluster DirClust,char fileName[11]);
+bool FileDelete(Cluster DirClust,char fileName[11]);
+bool FileSetPosition(File* file,u32 Position);
 #endif//_SYSTEM_FS_FAT_H

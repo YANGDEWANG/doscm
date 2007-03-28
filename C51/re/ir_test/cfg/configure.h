@@ -25,7 +25,7 @@
 #define VSPI2_LSB_U		1	//使用LSB
 #define VSPI2_MODE_3 //起始沿设置 ( 下降沿) 结束沿采样 ( 上升沿) SCK常态1
 
-#define DIS_LINEBUF_SIZE		9//字符操作缓存大小
+#define DIS_LINEBUF_SIZE		10//字符操作缓存大小
 #define	MaxUserEventCountDown 15//用户事件发生后的最大倒计时（单位时间s）指定时间后程序将进入常规流程
 //#define DEBUG
 //#define ASM			  interrupt				interrupt			  interrupt

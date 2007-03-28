@@ -25,14 +25,62 @@
 #include <spi.h>
 //#include <intrins.h>
 #include <avr/interrupt.h>
+#include <fs/fat.h>
 #include "spiFlash.h"
 uint8 SPIFlashManufacturerIDIndex;
 uint16 SPIFlashDevNameIndex;
+u32 SPIFlashSize;
 SPIFlashInfo SPIFlashInfoData;
-
+File *SpiFlashFile;
+static u8 workMode;
+enum SPIFlashProWorkMode
+{
+	SFPWM_idle,
+	SFPWM_writing,
+	SFPWM_reading,
+	SFPWM_Verifying,
+};
+void SPIFlashStartPro()
+{
+	if(workMode==SFPWM_idle)
+	{
+		if(SpiFlashFile->Size<=SPIFlashSize)
+		{
+			FileSetPosition(SpiFlashFile,0);
+			SPIFlashAddress = 0;
+			SPIFlashWorkMak = 0xff;
+			workMode = SFPWM_writing;
+		}
+		else
+		{
+			//todo:showerr
+		}
+	}
+}
+void SPIFlashStartRead()
+{
+	if(workMode==SFPWM_idle)
+	{
+		FileSetPosition(SpiFlashFile,0);
+		SPIFlashAddress = 0;
+		SPIFlashWorkMak = 1;
+		workMode = SFPWM_reading;
+	}
+}
+void SPIFlashStartVerify()
+{
+	if(workMode==SFPWM_idle)
+	{
+		FileSetPosition(SpiFlashFile,0);
+		SPIFlashAddress = 0;
+		SPIFlashWorkMak = 0xff;
+		workMode = SFPWM_Verifying;
+	}
+}
 void LoadSPIFlashInfoData()
 {
 	memcpy_P(&SPIFlashInfoData,&SPIFlashInfoTabel[SPIFlashDevNameIndex],sizeof(SPIFlashInfo));
+	SPIFlashSize = SPIFlashInfoData.PageCount*SPIFlashInfoData.PageSize;
 }
 void SPIFlashCopy()
 {
@@ -86,7 +134,7 @@ bool SPIFlashQueryDevType()
 
 	for(;i<sizeof(SPIFlashCommandInfo);i++)
 	{
-		SPIFlashSetManufacturer(i);
+		SPIFlashSetCommand(i);
 		id = SPIFlashReadID(0);
 		if(id.ManufacturerID==pgm_read_byte(SPIFlashManufacturerID+i))
 		{
@@ -110,4 +158,61 @@ bool SPIFlashQueryDevType()
 	}
 	SPIFlashDevNameIndex = sizeof(SPIFlashInfoTabel);
 	return false;
+}
+void pollingSpiFlash()
+{
+	switch(workMode)
+	{
+	case SFPWM_writing:
+		{
+			SPIToFatMode();
+			if(FatReadSector(SpiFlashFile,FatBuffer))
+			{
+				SPIToSpiFlashMode();
+				SPIFlashPageProgram(FatBuffer,256);
+				SPIFlashAddress+=256;
+				SPIFlashPageProgram(FatBuffer+256,256);
+				SPIFlashAddress+=256;
+			}
+			else
+			{
+				workMode = SFPWM_idle;
+			}
+			break;
+		}
+	case SFPWM_reading:
+		{
+			SPIToFatMode();
+			if(SPIFlashAddress<SPIFlashSize)
+			{
+				SPIToSpiFlashMode();
+				SPIFlashRead(FatBuffer,512,1);
+				SPIFlashAddress+=512;
+				SPIToFatMode();
+				FatWriteSector(SpiFlashFile,FatBuffer);
+			}
+			else
+			{
+				workMode = SFPWM_idle;
+			}
+			break;
+		}
+	case SFPWM_Verifying:
+		{
+			SPIToFatMode();
+			if(SPIFlashAddress<SPIFlashSize)
+			{
+				SPIToSpiFlashMode();
+				SPIFlashRead(FatBuffer,512,1);
+				SPIFlashAddress+=512;
+				SPIToFatMode();
+				FatWriteSector(SpiFlashFile,FatBuffer);
+			}
+			else
+			{
+				workMode = SFPWM_idle;
+			}
+			break;
+		}
+	}
 }

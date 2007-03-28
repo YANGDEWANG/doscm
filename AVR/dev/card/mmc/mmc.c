@@ -13,17 +13,50 @@
 ****************************************************************************************/
 #include <global.h>
 #include <util\delay.h>
-#include "mmc.h"
+#include "dev\mmc.h"
 #include "protocol.h"
-#include "spi.h"
+#include "dev\spi.h"
 #include "string.h"
 #define BLOCK_SIZE_EX2 9//BLOCK_SIZE等于2的BLOCK_SIZE_EX2次方
 #define SINGLE_BLOCK_WRITE_TOKEN 0xfe
-#define cbi(p,b) (p&=~(1<<b))
-#define sbi(p,b) (p|=(1<<b))
+#ifdef MMC_SOFT_SPI
+#define clSCL() cbi(PORT_MMC,MMC_CLK)
+#define setSCL() sbi(PORT_MMC,MMC_CLK)
+
+#define clDO() cbi(PORT_MMC,MMC_DO)
+#define setDO() sbi(PORT_MMC,MMC_DO)
+
+#define getDI() (PIN_MMC&(1<<MMC_DI))
+
+u8 MMC_MasterTransmit(u8 cData)
+{
+	uint8 i,ReadData=0;
+	for(i=0;i<8;i++)
+	{
+		clSCL();
+		if(cData&0x80)
+		{
+			setDO();
+		}
+		else
+		{
+			clDO();
+		}
+		cData = cData<<1;
+		setSCL();
+		ReadData = ReadData<<1;
+		if(getDI())
+			ReadData|=1;
+	}
+	setDO();
+	return ReadData;
+}
+#define Write_Byte_MMC(dat)	MMC_MasterTransmit(dat)
+#define Read_Byte_MMC()		MMC_MasterTransmit(0xff)
+#else//MMC_SOFT_SPI
 #define Write_Byte_MMC(dat)	SPI_MasterTransmit(dat)
 #define Read_Byte_MMC()		SPI_MasterTransmit(0xff)
-
+#endif//MMC_SOFT_SPI
 
 //--------------------------------------------------------------
 //uint8 sectorBuffer[16]; //16 bytes buffer
@@ -42,24 +75,20 @@ VOLUME_INFO_TYPE mmc_info;
 //	mmc_cmd[2] = baddr.b8_3.b8_2;
 //	mmc_cmd[3] = baddr.b8_3.b8_1;
 //}
-#if 0
+
 //****************************************************************************
 // Port Init
-//void MMC_Port_Init(void)
+void static inline MMC_Port_Init(void)
 //****************************************************************************
 {
-	//Config ports 
-	cbi(MMC_Direction_REG,SPI_DI);          //Set Pin MMC_DI as Input
-	sbi(MMC_Direction_REG,SPI_Clock);       //Set Pin MMC_Clock as Output
-	sbi(MMC_Direction_REG,SPI_DO);          //Set Pin MMC_DO as Output
-	sbi(MMC_Direction_REG,MMC_Chip_Select); //Set Pin MMC_Chip_Select as Output
-	//busy led port init
-	sbi(MMC_Direction_REG,SPI_BUSY);        //Set spi busy led port output
-	sbi(MMC_Write,SPI_BUSY);                      //busy led off
-
-	sbi(MMC_Write,MMC_Chip_Select);                        //Set MMC_Chip_Select to High,MMC/SD Invalid.
+	sbi(DDR_MMC,MMC_CS); 
+	sbi(PORT_MMC,MMC_CS);	//Config ports 
+#ifdef MMC_SOFT_SPI
+	cbi(DDR_MMC,MMC_DI);          //Set Pin MMC_DI as Input
+	sbi(DDR_MMC,MMC_CLK);       //Set Pin MMC_Clock as Output
+	sbi(DDR_MMC,MMC_DO);          //Set Pin MMC_DO as Output
+#endif//MMC_SOFT_SPI
 }
-#endif
 //****************************************************************************
 //Routine for Init MMC/SD card(SPI-MODE)
 bool MMCInit(void)
@@ -67,8 +96,7 @@ bool MMCInit(void)
 {  
 	uint8 i;
 	//uint8 CMD[] = {0x40,0x00,0x00,0x00,0x00,0x95};
-	sbi(DDR_MMC,MMC_CS); //Set Pin MMC_Chip_Select as Output
-	sbi(PORT_MMC,MMC_CS);                        //Set MMC_Chip_Select to High,MMC/SD Invalid.
+	MMC_Port_Init();
 	_delay_us(250);  //Wait MMC/SD ready...
 	for (i=0;i<0x0f;i++) 
 	{
@@ -212,7 +240,7 @@ bool MMCWriteSector(uint32 addr,uint8 *Buffer)
 
 	//set MMC_Chip_Select to high (MMC/SD-Card Invalid)
 	MMC_Disable();
-	return(0);
+	return(true);
 } 
 /****************************************************************************
 读取块中数据区
@@ -241,7 +269,7 @@ bool MMCReadBlockAt(uint8 *Buffer,uint16 size,uint16 offset,uint16 Bytes)
 	{
 		Read_Byte_MMC();
 	}
-	for (;i<Bytes;i++)
+	for (;i<offset+Bytes;i++)
 	{
 		*Buffer++ = Read_Byte_MMC();
 	}

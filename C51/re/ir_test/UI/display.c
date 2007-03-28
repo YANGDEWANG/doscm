@@ -160,10 +160,16 @@ void ShowString(char const*s,uint8 stp,uint8 len)
 {
 	//	uint8 i;
 	char c;
+	uint8 maxl;
 	uint8 data* out =   DisplayDeviceMemImage+stp;
 	prog_char *vfdc = vfd_char;
 	prog_char *vfdd = vfd_digit;
 	DisplayChanged = true;
+	maxl = sizeof(DisplayDeviceMemImage)-stp;
+	if(len>maxl)
+	{
+		len = maxl;
+	}
 	if(len)
 	{
 		do

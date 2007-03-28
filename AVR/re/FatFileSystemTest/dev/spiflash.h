@@ -24,10 +24,10 @@
 */
 #include <configure.h>
 #include <avr/pgmspace.h>
-enum SPIFlashManufacturer
+enum SPIFlashCommand
 {
-	SFM_Eon,
-	SFM_Atmel,
+	SFC_Eon,
+	SFC_Atmel,
 };
 typedef uint8 SFM;
 enum SPI_FLASH
@@ -57,6 +57,8 @@ typedef struct SPI_FLASHID
 typedef struct SPI_FLASH_INFO
 {
 	SPIFlashID id;
+	_uint8 Command;
+	char Name[8];
 	_uint8	PageSize;
 	_uint16	PageCount;
 }SPIFlashInfo;
@@ -64,13 +66,14 @@ typedef SPIFlashInfo prog_SPIFlashInfo PROGMEM;
 
 extern prog_SPIFlashCommand SPIFlashCommandInfo[1];
 extern prog_char SPIFlashManufacturerID[2];
-extern prog_SPIFlashInfo SPIFlashInfoTabel[1];
+extern prog_SPIFlashInfo SPIFlashInfoTabel[2];
 extern SPIFlashCommand SPIFlashCom;
 extern uint32 SPIFlashAddress;
 extern volatile bool spiIdle;
+extern u8 SPIFlashWorkMak;
 
 void SPIFlashInit();
-void SPIFlashSetManufacturer(SFM m);
+void SPIFlashSetCommand(SFM m);
 //void inline WaitSPIIdle();
 void static inline WaitSPIIdle()
 {
@@ -78,8 +81,8 @@ void static inline WaitSPIIdle()
 }
 void SPIFlashWriteStatusRegister(uint8 srdata);
 uint8 SPIFlashReadStatusRegister(uint8 devC);
-bool SPIFlashPageProgram(uint8* dat,uint8 count);
-bool SPIFlashRead(uint8* dat,uint8 count,uint8 devC);
+bool SPIFlashPageProgram(uint8* dat,u16 count);
+bool SPIFlashRead(uint8* dat,u16 count,uint8 devC);
 SPIFlashID SPIFlashReadID(uint8 devC);
 void SPIFlashErasureAll();
 #define SPIFlashCleanWriteProtect() SPIFlashWriteStatusRegister(0)

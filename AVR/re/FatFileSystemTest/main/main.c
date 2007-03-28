@@ -2,14 +2,14 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "Global.h"
-#include "lcd.h"
+#include "dev/lcd.h"
 #include "polling.h"
-#include "USART.h"
-#include "SPI.h"
-#include "card/mmc/MMC.h"
+#include "dev/USART.h"
+#include "dev/SPI.h"
+#include "dev/MMC.h"
 //#include "displayAudio.h"
 #include "../ui/Display.h"
-#include "Clock.h"
+#include "system/Clock.h"
 //#include "UserEventManage.h"
 //#include "eeprom_ex.h"
 #include <avr/wdt.h> 
@@ -31,15 +31,9 @@ void IniDev()
 	//InitUSART(3);
 	lcd_init();
 	//InitUSART(12);//38.4
+	SPIFlashInit();
 	ControlClock(true);
 	//lcd_init();
-	//while(1)
-	/*uint8 dat[512];
-	uint16 i;
-	for(i = 0;i<sizeof(dat);i++)dat[i]=i+1;
-	MMC_write_sector(1024,dat);*/
-
-	
 }
 
 int main()//                         ²âÊÔ³ÌÐò

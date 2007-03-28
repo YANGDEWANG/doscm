@@ -2,7 +2,7 @@
 #define _DISPLAY_H
 
 #include "configure.h"
-#include "boolean.h"
+#include "system/boolean.h"
 #define NOTIFY_DIS_CHANGE
 #define DISPLAY_SHINE_BIT	true	//定义要点亮显示应该设置显示缓存的值为1还是0
 #define TOTAL_SEG 			16	//可用数字显示位

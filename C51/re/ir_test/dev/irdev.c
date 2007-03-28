@@ -147,7 +147,7 @@ static volatile uint16 oldtime;
 void IRDevinterrupt(void) interrupt 0  using 2
 {
 	uint16 time = CurrentTime;
-	if(!(IRChangec<sizeof(IRChangeTime)))
+	if(!(IRChangec<sizeof(IRChangeTime)-1))
 	{
 		IRChangec=0;
 		//return;
@@ -157,14 +157,14 @@ void IRDevinterrupt(void) interrupt 0  using 2
 	case IR_DEV_IDLE:
 		{
 			IRChangec = 0;
-			oldtime = CurrentTime;
+			//oldtime = CurrentTime;
 			IRDevState = IR_DEV_INCEPT;
 			break;
 		}
 	case IR_DEV_INCEPT:
 		{
 			IRChangeTime[IRChangec]=(time-oldtime)/IR_CLICK_TIME;//Ã¿¸ñ50us
-			oldtime = CurrentTime;
+			//oldtime = CurrentTime;
 			IRChangec++;
 			break;
 		}

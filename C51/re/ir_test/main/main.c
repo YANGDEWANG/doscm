@@ -33,7 +33,7 @@ void main()//                         ²âÊÔ³ÌÐò
 	/////////////////////Ö÷Ñ­»·//////////////////////
 	while(1)
 	{
-
+ShowIrInformation();
 		PollingMain();
 	}
 }

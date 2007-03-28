@@ -37,7 +37,7 @@ enum IR_DEV_STATE
 	IR_DEV_INCEPT,		//数据接收中
 	IR_DEV_DATAANALYSE,	//数据分析中
 };
-#define IR_CHANGE_TIME_SIZE (98)//86
+#define IR_CHANGE_TIME_SIZE (99)//86
 extern uint8 ICName;
 extern IRData IrInformation;
 extern bool  IRKeyDown,IRKeyHold;

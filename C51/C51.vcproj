@@ -285,6 +285,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\mainTest.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\MC14094B.c"
 				>
 			</File>

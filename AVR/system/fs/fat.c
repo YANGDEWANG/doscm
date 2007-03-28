@@ -3,9 +3,11 @@
 /*				  											*/
 /************************************************************/
 #include <global.h>
+#include <Clock.h>
 #include <string.h>
-#include <card/mmc/mmc.h>
-#include "fat.h"
+#include <dev/mmc.h>
+#include <avr/pgmspace.h>
+#include "fs/fat.h"
 u8 FatBuffer[512];
 extern u8 WorkFlag;
 u8	FatType;  //0:FAT12  1:FAT16   2:FAT32
@@ -16,10 +18,14 @@ u16	BytesPerSector;
 u16	SectorsPerCluster;
 u32 FirstFATSector;
 u32 FatSectorCount;
+u32 BytesPerClust;
 ROOTDIR_INF	RootDir;  //Ä¿Â¼Çø
 //FindFileInfo	FindInfo;
 //********************************************************************************************
 u32 FatBufferLBA;
+#ifdef FAT_USE_FILE_BUFFER
+u32 TempFileStartSector;
+#endif//FAT_USE_FILE_BUFFER
 //¶ÁÒ»¸öÉÈÇø
 void ReadBlock(u32 lba) 
 {
@@ -31,6 +37,32 @@ bool WriteBlock(u32 lba)
 	return MMCWriteSector(lba,FatBuffer);
 }
 #define ReadBlockToBuff(LBA,pbuff) MMCReadSector(LBA,pbuff)
+#define WriteBlockFormBuff(LBA,pbuff) MMCWriteSector(LBA,pbuff)
+
+//bool ReadBlockToBuff(lba,pbuff)
+//{
+//	if(lba==FatBufferLBA&&pbuff==FatBuffer)
+//	{
+//		return true;
+//	}
+//	FatBufferLBA = lba;
+//	return	MMCReadSector(lba,pbuff);
+//}
+//bool WriteBlockFormBuff(lba,pbuff)
+//{
+//	if(pbuff==FatBuffer)
+//		FatBufferLBA = lba;
+//	MMCWriteSector(lba,pbuff);
+//}
+//bool ReadBlock(u32 lba) 
+//{
+//	ReadBlockToBuff(lba,FatBuffer);
+//}
+//bool WriteBlock(u32 lba) 
+//{
+//	return WriteBlockFormBuff(lba,FatBuffer);
+//}
+
 
 /*-----------------------------------------------------------------------
 ²éÑ¯Êý¾ÝÇøÒ»¸ö´Ø¿ªÊ¼ÉÈÇøºÅ
@@ -39,82 +71,20 @@ u32 fatClustToSect(u32 clust)
 {
 	return ((clust-2) * SectorsPerCluster) + FirstDataSector;//´Ø±àºÅ´Ó2¿ªÊ¼
 }
-/*-----------------------------------------------------------------------
-²éÑ¯Ò»¸ö´ØËùÕ¼×Ö½ÚÊý
------------------------------------------------------------------------*/
-u32 fatClusterSize(void)
+static u32 getFatByteOffsetInFatTable(Cluster cluster)//¼ÆËãFATµÄ×Ö½ÚÆ«ÒÆ
 {
-	// return the number of sectors in a disk cluster
-	return SectorsPerCluster*BytesPerSector;
+	cluster = cluster << FatType;
+	if(FatType==FAT12)cluster+=cluster>>1;
+	return cluster;
 }
-
-//ÎÄ¼þÏµÍ³³õÊ¼»¯
-u8 fatInit()
-{ 
-	PartRecord PartInfo;
-	BPB710 *bpb=0;
-	ReadBlock(0);      // ¶ÁÈ¡·ÖÇø±íÐÅÏ¢  
-	PartInfo = *((PartRecord *) ((PartSector *)FatBuffer)->psPart);
-	// Òýµ¼ÉÈÇøºÅÔÚPartInfo.prStartLBAÖÐ
-	ReadBlock(PartInfo.prStartLBA);  //ataReadSectors( DRIVE0, PartInfo.prStartLBA, 1, SectorBuffer );
-	bpb = (BPB710 *) &((BootSector710 *) FatBuffer)->bsBPB;
-	FirstDataSector	= PartInfo.prStartLBA;
-	if(bpb->bpbFATsecs)
-	{
-		// bpbFATsecs·Ç0,ÎªFAT16,FAT±íËùÕ¼µÄÉÈÇøÊýÔÚbpbFATsecsÀï
-		FatSectorCount = bpb->bpbFATsecs;
-	}
-	else
-	{
-		// bpbFATsecsÊÇ0,ÎªFAT32,FAT±íËùÕ¼µÄÉÈÇøÊýÔÚbpbBigFATsecsÀï
-		FatSectorCount = bpb->bpbBigFATsecs;
-	}
-	FirstDataSector	+= bpb->bpbResSectors + bpb->bpbFATs * FatSectorCount; 
-	SectorsPerCluster	= bpb->bpbSecPerClust;
-	BytesPerSector		= bpb->bpbBytesPerSec;
-	FirstFATSector		= bpb->bpbResSectors + PartInfo.prStartLBA;
-	switch (PartInfo.prPartType)
-	{
-	case PART_TYPE_FAT12:  
-		RootDir.Sector=    FirstDataSector;
-		FirstDataSector += ((bpb->bpbRootDirEnts*32)/BytesPerSector);
-		RootDirEnts = bpb->bpbRootDirEnts;
-		FatType = FAT12;  
-		FAT_MASK=FAT12_MASK;
-		break;
-	case PART_TYPE_DOSFAT16:
-	case PART_TYPE_FAT16: 
-	case PART_TYPE_FAT16LBA:
-		RootDir.Sector =   FirstDataSector;
-		FirstDataSector += (bpb->bpbRootDirEnts*32)/BytesPerSector;
-		RootDirEnts = bpb->bpbRootDirEnts;
-		FatType = FAT16; 
-		FAT_MASK=FAT16_MASK;	
-		break;
-	case PART_TYPE_FAT32LBA:
-	case PART_TYPE_FAT32:
-		RootDir.Clust = bpb->bpbRootClust;
-		//RootDir.Sector= fatClustToSect(bpb->bpbRootClust);
-		FAT_MASK=FAT32_MASK;
-		FatType = FAT32; 
-		break;
-	default:
-		return 0;
-	}  
-	return 1;	
+static u32 getFatSectorOffset(Cluster cluster)//¼ÆËãFATÉÈÇøºÅ
+{
+	return FirstFATSector + (getFatByteOffsetInFatTable(cluster) / BytesPerSector);	
 }
-
-//bool static FatFileNameComp(char const *a,char const *b)
-//{
-//	char aa[9],ba[9];
-//	aa[8]=0;
-//	ba[8]=0;
-//	memcpy(aa,a,8);
-//	memcpy(ba,b,8);
-//	strcasecmp(aa,ba);
-//}
-//bool static FatFileNameExtComp(char const *a,char const *b)
-//{}
+static u16 getFatBytesOffsetInSector(Cluster cluster)//¼ÆËãFATÉÈÇøºÅÖÐ±íÏîµÄÆ«ÒÆµØÖ·
+{
+	return getFatByteOffsetInFatTable(cluster)% BytesPerSector; 
+}
 void static fatSetFAT(u32 fatIndex,u32 fatData)
 {
 	u32 fatOffset;
@@ -173,23 +143,21 @@ void static fatSetFAT(u32 fatIndex,u32 fatData)
 	WriteBlock(FatBufferLBA);
 	WriteBlock(FatBufferLBA+FatSectorCount);
 }
+
+
 /*-----------------------------------------------------------------------
 ÔÚFAT±íÖÐ²éÑ¯ÏÂÒ»¸öÎ´Ê¹ÓÃ´ØºÅ
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
 cluster£º´Ó´Ë´Ø¿ªÊ¼²éÕÒ
 return £º²éÕÒµ½µÄ´ØºÅ£¬Èç¹û·µ»ØCLUST_EOFE±íÊ¾clusterºóÃ»ÓÐ¿Õ´Ø¿ÉÓÃ
 -----------------------------------------------------------------------*/
 u32 fatNextEmptyCluster(u32 cluster)
 {
 	//cluster++;
-	u32 fatOffset;
-	u32 sector;
-	u16 offset;
+	u32 sector = getFatSectorOffset(cluster);
+	u16 offset = getFatBytesOffsetInSector(cluster);
 	b16 fat12Cluater;
 	bool fat12NextIsHbyte=false;
-	fatOffset = cluster << FatType;
-	if(FatType==FAT12)fatOffset+=cluster>>1;
-	sector = FirstFATSector + (fatOffset / BytesPerSector);	//¼ÆËãFATÉÈÇøºÅ
-	offset = fatOffset % BytesPerSector; //¼ÆËãFATÉÈÇøºÅÖÐ±íÏîµÄÆ«ÒÆµØÖ·
 	do
 	{
 		if(sector - FirstFATSector>=FatSectorCount)//×îºóµÄFatÉÈÇøÁË
@@ -269,19 +237,18 @@ u32 fatNextEmptyCluster(u32 cluster)
 		offset = 0;
 	}while(1);
 } 
+
 /*-----------------------------------------------------------------------
 ÔÚFAT±íÖÐ²éÑ¯ÏÂÒ»¸ö´ØºÅ
+Èç¹û²éµ½½«¸üÐÂcluster·ñÔò±£³Öcluster²»±ä·µ»Øfalse
 -----------------------------------------------------------------------*/
-u32 fatNextCluster(u32 cluster)
+bool fatNextCluster(Cluster *cluster)
 {
-	u32 nextCluster=CLUST_EOFS;
-	u32 fatOffset;
-	u32 sector;
-	u16 offset;
-	fatOffset = cluster << FatType;
-	if(FatType==FAT12)fatOffset+=cluster>>1;
-	sector = FirstFATSector + (fatOffset / BytesPerSector);	//¼ÆËãFATÉÈÇøºÅ
-	offset = fatOffset % BytesPerSector; //¼ÆËãFATÉÈÇøºÅÖÐ±íÏîµÄÆ«ÒÆµØÖ·
+	u32 nextCluster=*cluster;
+	if(nextCluster<2)
+		return false;
+	u32 sector = getFatSectorOffset(nextCluster);
+	u16 offset = getFatBytesOffsetInSector(nextCluster);
 	if(FatType==FAT32 )	// Ò»¸ö±íÏîÎª4bytes(32 bits)
 	{
 		nextCluster=MMCReadu32(sector,offset);
@@ -301,7 +268,7 @@ u32 fatNextCluster(u32 cluster)
 		{
 			nextCluster=MMCReadu16(sector,offset);
 		}
-		if(cluster&0X00000001)
+		if(*(u8*)cluster&0X00000001)
 		{   //È¡µÍ12Î»µØÖ·
 			nextCluster>>=4;
 		}
@@ -311,10 +278,120 @@ u32 fatNextCluster(u32 cluster)
 		}
 	}
 	// ÊÇ·ñÎÄ¼þµÄ½áÊø´Ø
-	if (nextCluster >= (CLUST_EOFS & FAT_MASK))
-		nextCluster = CLUST_EOFE;
-	return nextCluster;
+	if (nextCluster < (CLUST_EOFS & FAT_MASK))
+	{
+		*cluster = nextCluster;
+		return true;
+	}
+	return false;
 } 
+static bool FATAssignNewClust(File* file)
+{
+	u32 nextE = file->CurrentCluster;
+	if(!fatNextCluster(&nextE))
+	{
+		nextE = fatNextEmptyCluster(file->CurrentCluster);
+		if(nextE==CLUST_EOFE)
+			nextE = fatNextEmptyCluster(2);
+		if(nextE==CLUST_EOFE)
+			return false;
+		if(file->CurrentCluster==0)
+		{
+			file->CurrentCluster = nextE;
+			file->StartCluster = nextE;
+		}
+		else
+		{
+			fatSetFAT(file->CurrentCluster,nextE);
+		}
+		fatSetFAT(nextE,CLUST_EOFE);
+	}
+	return true;
+}
+//ÎÄ¼þÏµÍ³³õÊ¼»¯
+//×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
+u8 FATInit()
+{ 
+#ifdef FAT_USE_FILE_BUFFER
+	File TempFile;
+#endif//FAT_USE_FILE_BUFFER
+	PartRecord PartInfo;
+	BPB710 *bpb=0;
+	ReadBlock(0);      // ¶ÁÈ¡·ÖÇø±íÐÅÏ¢  
+	PartInfo = *((PartRecord *) ((PartSector *)FatBuffer)->psPart);
+	// Òýµ¼ÉÈÇøºÅÔÚPartInfo.prStartLBAÖÐ
+	ReadBlock(PartInfo.prStartLBA);  //ataReadSectors( DRIVE0, PartInfo.prStartLBA, 1, SectorBuffer );
+	bpb = (BPB710 *) &((BootSector710 *) FatBuffer)->bsBPB;
+	FirstDataSector	= PartInfo.prStartLBA;
+	if(bpb->bpbFATsecs)
+	{
+		// bpbFATsecs·Ç0,ÎªFAT16,FAT±íËùÕ¼µÄÉÈÇøÊýÔÚbpbFATsecsÀï
+		FatSectorCount = bpb->bpbFATsecs;
+	}
+	else
+	{
+		// bpbFATsecsÊÇ0,ÎªFAT32,FAT±íËùÕ¼µÄÉÈÇøÊýÔÚbpbBigFATsecsÀï
+		FatSectorCount = bpb->bpbBigFATsecs;
+	}
+	FirstDataSector	+= bpb->bpbResSectors + bpb->bpbFATs * FatSectorCount; 
+	SectorsPerCluster	= bpb->bpbSecPerClust;
+	BytesPerSector		= bpb->bpbBytesPerSec;
+	FirstFATSector		= bpb->bpbResSectors + PartInfo.prStartLBA;
+	switch (PartInfo.prPartType)
+	{
+	case PART_TYPE_FAT12:  
+		RootDir.Sector=    FirstDataSector;
+		FirstDataSector += ((bpb->bpbRootDirEnts*32)/BytesPerSector);
+		RootDirEnts = bpb->bpbRootDirEnts;
+		FatType = FAT12;  
+		FAT_MASK=FAT12_MASK;
+		break;
+	case PART_TYPE_DOSFAT16:
+	case PART_TYPE_FAT16: 
+	case PART_TYPE_FAT16LBA:
+		RootDir.Sector =   FirstDataSector;
+		FirstDataSector += (bpb->bpbRootDirEnts*32)/BytesPerSector;
+		RootDirEnts = bpb->bpbRootDirEnts;
+		FatType = FAT16; 
+		FAT_MASK=FAT16_MASK;	
+		break;
+	case PART_TYPE_FAT32LBA:
+	case PART_TYPE_FAT32:
+		RootDir.Clust = bpb->bpbRootClust;
+		//RootDir.Sector= fatClustToSect(bpb->bpbRootClust);
+		FAT_MASK=FAT32_MASK;
+		FatType = FAT32; 
+		break;
+	default:
+		return 0;
+	}  
+	BytesPerClust = SectorsPerCluster*BytesPerSector;
+#ifdef FAT_USE_FILE_BUFFER
+	memcpy_P(TempFile.Name.FullName,PSTR(FILE_BUFFER_NAME),11);
+	FileNew(0,TempFile.Name.FullName,FILE_ATTR_HIDDEN);
+	FileOpenWithName(0,&TempFile);
+	FATAssignNewClust(&TempFile);
+	TempFile.Size = BytesPerClust;
+	TempFileStartSector = fatClustToSect(TempFile.StartCluster);
+	return FileSave(&TempFile);
+#endif//FAT_USE_FILE_BUFFER
+
+	return true;	
+}
+
+//bool static FatFileNameComp(char const *a,char const *b)
+//{
+//	char aa[9],ba[9];
+//	aa[8]=0;
+//	ba[8]=0;
+//	memcpy(aa,a,8);
+//	memcpy(ba,b,8);
+//	strcasecmp(aa,ba);
+//}
+//bool static FatFileNameExtComp(char const *a,char const *b)
+//{}
+
+//×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
 enum FIND_FILE_WITH
 {
 	FFW_Index,
@@ -339,8 +416,10 @@ struct FIND_FILE_PARAMETER
 		u16 Index;//»ùÓÚÎÄ¼þË÷Òý²éÕÒÓÃÓÚ±éÀúÄ¿Â¼
 	}Parameter;
 	u8 FileIndexInFatBuffer;//²éÕÒ½á¹û£¬ËüÊÇ·ûºÏ²éÕÒÌõ¼þµÄÎÄ¼þÔÚFatBufferÖÐµÄË÷Òý
+	u32 FileDirEntrySector;//²éÕÒ½á¹û£¬ËüÊÇ·ûºÏ²éÕÒÌõ¼þµÄÎÄ¼þÄ¿Â¼ÏîËùÔÚµÄÉÈÇø
 }FindFileParameter;
-bool static FindFile()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ýFileIndexInFatBufferÒÔÍâµÄ×Ö¶Î
+//×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
+bool static FileFind()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ý±íÃ÷Îª[²éÕÒ½á¹û]ÒÔÍâµÄ×Ö¶Î
 {
 	u32 DirSector;
 	DIREntry *dir;
@@ -381,7 +460,7 @@ bool static FindFile()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ýFileIndexInFatBufferÒÔÍ
 					goto su;
 				}
 			}
-			else if((dir->deAttributes&ATTR_LONG_FILENAME)!=ATTR_LONG_FILENAME)
+			else if((dir->Attributes&FILE_ATTR_LONG_FILENAME)!=FILE_ATTR_LONG_FILENAME)
 			{
 				switch(FindFileParameter.FindWith)
 				{
@@ -415,8 +494,7 @@ bool static FindFile()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ýFileIndexInFatBufferÒÔÍ
 			}
 			else
 			{
-				DirClust = fatNextCluster(DirClust);
-				if(DirClust!=CLUST_EOFE)
+				if(fatNextCluster(&DirClust))
 				{
 					DirSector = fatClustToSect(DirClust);
 					SectorC = SectorsPerCluster;
@@ -435,6 +513,7 @@ bool static FindFile()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ýFileIndexInFatBufferÒÔÍ
 	while(true);
 su:
 	FindFileParameter.FileIndexInFatBuffer = i;
+	FindFileParameter.FileDirEntrySector = DirSector;
 	return true;
 }
 ///******************************************************
@@ -528,7 +607,7 @@ su:
 //	memcpy(file->ExtensionName,dir->deExtension,8);
 //	file->Attributes.Attribute=dir->deAttributes;
 //	file->StartCluster  = ((u32)(dir->deHighClust)<<16)|dir->deStartCluster;
-//	file->FileSize = dir->deFileSize;
+//	file->Size = dir->deFileSize;
 //	file->CurrentCluster=file->StartCluster;
 //	file->Position=0;
 //	return true;
@@ -537,106 +616,262 @@ su:
 
 static void FileInit(File* file)
 {
-	DIREntry *dir=(DIREntry *)(FatBuffer+sizeof(DIREntry)*FindFileParameter.FileIndexInFatBuffer);
+	DIREntry *dir=((DIREntry *)(FatBuffer))+FindFileParameter.FileIndexInFatBuffer;
 	memcpy(file->Name.FullName,dir->Name.FullName,11);
-	file->Attributes.Attribute=dir->deAttributes;
-	file->StartCluster  = ((u32)(dir->deHighClust)<<16)|dir->deStartCluster;
-	file->FileSize = dir->deFileSize;
+	file->Attributes.Attribute=dir->Attributes;
+	file->StartCluster  = ((u32)(dir->HighClust)<<16)|dir->StartCluster;
+	file->Size = dir->Size;
 	file->CurrentCluster=file->StartCluster;
 	file->Position=0;
+	file->DirEntrySector = FindFileParameter.FileDirEntrySector;
+	file->DirEntryIndex = FindFileParameter.FileIndexInFatBuffer;
 }
 /******************************************************
 ´ÓÎÄ¼þ¼ÐÖÐ²éÕÒÎÄ¼þ»òÄ¿Â¼
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
 DirClust£ºÄ¿Â¼ËùÔÚµÄ×å£¨0Îª¸ùÄ¿Â¼£©
 fileIndex£ºÒª²éÕÒµÄÎÄ¼þµÄÄ¿Â¼Ë÷Òý
 return	£º²éµ½ÎÄ¼þ·µ»ØTrue£¬²¢ÌîÐ´fileÖÐµÄ×Ö¶Î
 ******************************************************/
-bool OpenFileWithIndex(Cluster DirClust,File* file,u16 fileIndex)
+bool FileOpenWithIndex(Cluster DirClust,File* file,u16 fileIndex)
 {
 	FindFileParameter.DirClust = DirClust;
 	FindFileParameter.FindWith=FFW_Index;
 	FindFileParameter.Parameter.Index = fileIndex;
-	if(FindFile())
+	if(FileFind())
 	{
 		FileInit(file);
 		return true;
 	}
 	return false;
 }
+/******************************************************
+²éÕÒÄ¿Â¼ÖÐÊÇ·ñ´æÔÚÎÄ¼þ
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
+DirClust£ºÄ¿Â¼ËùÔÚµÄ×å£¨0Îª¸ùÄ¿Â¼£©
+fileName£ºÒª²éÕÒµÄÎÄ¼þÃû
+return	£º·ñ´æ·µ»ØTrue
+******************************************************/
 bool FileExist(Cluster DirClust,char fileName[11])
 {
 	FindFileParameter.DirClust = DirClust;
 	FindFileParameter.FindWith=FFW_Name;
 	memcpy(FindFileParameter.Parameter.Name.FullName,fileName,11);
-	return FindFile();
+	return FileFind();
 }
 /******************************************************
 ´ÓÎÄ¼þ¼ÐÖÐ²éÕÒÎÄ¼þ»òÄ¿Â¼
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
 dirCluster£ºÄ¿Â¼ËùÔÚµÄ×å£¨0Îª¸ùÄ¿Â¼£©
 file	  £ºÒª²éÕÒµÄÎÄ¼þµÄÎÄ¼þÃûºÍÀ©Õ¹Ãû
 return	  £º²éµ½ÎÄ¼þ·µ»ØTrue£¬²¢ÌîÐ´fileÖÐµÄÆäËû×Ö¶Î
 ******************************************************/
-bool OpenFileWithName(Cluster DirClust,File *file)
+bool FileOpenWithName(Cluster DirClust,File *file)
 {
 	FindFileParameter.DirClust = DirClust;
 	FindFileParameter.FindWith=FFW_Name;
 	memcpy(FindFileParameter.Parameter.Name.FullName,file->Name.FullName,11);
-	if(FindFile())
+	if(FileFind())
 	{
 		FileInit(file);
 		return true;
 	}
 	return false;
 }
+///»ñÈ¡ÎÄ¼þPositionÔÚCurrentClusterÖÐµÄSectorÆ«ÒÆ
+static u16 getFileSectorClustoffset(const File* file)
+{
+	return (file->Position%BytesPerClust)/BytesPerSector;
+}
 /******************************************************
-¶ÁÈ¡ÎÄ¼þµÄÏÂÒ»¸öÉÈÇø£¨512×Ö½Ú£©
+¶ÁÈ¡ÎÄ¼þµÄPositionËùÖ¸ÉÈÇø£¨512×Ö½Ú£©µ«²»¸ü¸ÄPosition
 file  £ºÒª¶ÁÈ¡µÄÎÄ¼þ
 buffer£º¶ÁÈ¡Êý¾ÝµÄ´¢Ðîbuffer
 return£º³É¹¦·µ»ØTrue£¬µ½ÁËÎÄ¼þµÄÄ©Î²·µ»Øfalse
 ******************************************************/
-bool FatReadSector(File* file,u8* buffer)
+bool FatPeekSector(File* file,u8* buffer)
 {
-	if(file->CurrentCluster==CLUST_EOFE
-		||file->FileSize<file->Position)
+	if(file->Size<=file->Position)
 	{
 		return false;
 	}
 	u32 sector = fatClustToSect(file->CurrentCluster);
-	u32 Clustoffset = (file->Position%fatClusterSize())/BytesPerSector;
-	ReadBlockToBuff(sector+Clustoffset,buffer);
-	file->Position+=512;
-	if(Clustoffset+512>fatClusterSize())
+	ReadBlockToBuff(sector+getFileSectorClustoffset(file),buffer);
+	return true;
+}
+/******************************************************
+¶ÁÈ¡ÎÄ¼þµÄPositionËùÖ¸ÉÈÇø£¨512×Ö½Ú£©²¢½«PositionºóÒÆ512×Ö½Ú
+file  £ºÒª¶ÁÈ¡µÄÎÄ¼þ
+buffer£º¶ÁÈ¡Êý¾ÝµÄ´¢Ðîbuffer
+return£º³É¹¦·µ»ØTrue£¬µ½ÁËÎÄ¼þµÄÄ©Î²·µ»Øfalse
+******************************************************/
+bool FatReadSector(File* file,u8 buffer[512])
+{
+	if(FatPeekSector(file,buffer))
 	{
-		file->CurrentCluster=fatNextCluster(file->CurrentCluster);
+
+		if(getFileSectorClustoffset(file)>=(SectorsPerCluster-1))
+		{
+			if(!fatNextCluster(&(file->CurrentCluster)))
+			{
+				return false;
+			}
+		}
+		file->Position+=512;
+		if(file->Position>file->Size)
+		{
+			file->Position=file->Size;
+		}
+		return true;
+	}
+	return false;
+}
+static u32 getFileClustCount(u32 fileSize)
+{
+	u32 cls = fileSize/BytesPerClust;
+	if(fileSize%BytesPerClust!=0)cls++;
+	return cls;
+}
+
+/******************************************************
+Ð´ÎÄ¼þµÄPositionËùÖ¸ÉÈÇø£¨512×Ö½Ú£©²¢½«PositionºóÒÆ512×Ö½Ú
+µ½ÁËÎÄ¼þµÄÄ©Î²½«À©³äÎÄ¼þµÄÈÝÁ¿£¬Èç¹ûÃ»ÓÐ¿ÉÓÃµÄ¿Õ×å½«·µ»Øfalse
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer£¬²»ÄÜÈÃbufferÓëFatBufferÖØÓÃ£¬³ý·Ç
+¶¨ÒåÁËFAT_USE_FILE_BUFFER
+file  £ºÒªÐ´ÈëµÄÎÄ¼þ
+buffer£ºÊý¾Ý
+return£º³É¹¦·µ»ØTrue
+******************************************************/
+bool FatWriteSector(File* file,u8 buffer[512])
+{
+
+	if(getFileClustCount(file->Size)*BytesPerClust<(file->Position+512))
+	{
+
+#ifdef FAT_USE_FILE_BUFFER
+		WriteBlock(TempFileStartSector);
+#endif//FAT_USE_FILE_BUFFER
+		FATAssignNewClust(file);
+		//	file->Size += 512-file->Size%512;
+#ifdef FAT_USE_FILE_BUFFER
+		ReadBlock(TempFileStartSector);
+#endif//FAT_USE_FILE_BUFFER
+	}
+	u32 sector = fatClustToSect(file->CurrentCluster);
+	u16 Sectoroffset = (file->Position%BytesPerClust)/BytesPerSector;
+	WriteBlockFormBuff(sector+Sectoroffset,buffer);
+	file->Position+=512;
+	if(file->Position>file->Size)
+	{
+		file->Size = file->Position;
+	}
+	if(Sectoroffset>=SectorsPerCluster-1)
+	{
+		if(!fatNextCluster(&file->CurrentCluster))
+		{
+			FATAssignNewClust(file);
+			return fatNextCluster(&file->CurrentCluster);
+		}
 	}
 	return true;
 }
-
-
+#ifdef DATE_TIME_U
+static u16 getFileDate()
+{
+	return (Now.Year-1980)*512+Now.Month*32+Now.Day;
+}
+static u16 getFileTime()
+{
+	return  Now.Hour*2048+Now.Minute*32+Now.Second/2;
+}
+#else//DATE_TIME_U
+#define getFileTime() Now_Hour*2048+Now_Minute*32+Now_Second/2
+#define getFileDate() (Now_Year-1980)*512+Now_Month*32+Now_Day
+#endif//DATE_TIME_U
 /******************************************************
 ÐÂ½¨ÎÄ¼þ»òÄ¿Â¼
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
 DirClust£ºÄ¿Â¼ËùÔÚµÄ×å£¨0Îª¸ùÄ¿Â¼£©
 fileName£ºÎÄ¼þÃû£¨±ØÐëÈ«Îª´óÐ´£©
 Attributes£ºÎÄ¼þÊôÐÔ
 return	£º³É¹¦·µ»ØTrue
 ******************************************************/
-bool FatNewFile(Cluster DirClust,char fileName[11],u8 Attributes)
+bool FileNew(Cluster DirClust,char fileName[11],u8 Attributes)
 {
 	DIREntry *dir;
+
 	if(!FileExist(DirClust,fileName))
 	{
 		//	FindFileParameter.DirClust = DirClust;//FileExistÒÑ¾­ÉèÖÃÁË
 		FindFileParameter.FindWith=FFW_IsEmpty;
-		if(FindFile())
+		if(FileFind())
 		{
 
 			dir=(DIREntry *)(FatBuffer+sizeof(DIREntry)*FindFileParameter.FileIndexInFatBuffer);
 			memset(dir,0,sizeof(DIREntry));
-			dir->deAttributes=Attributes;
+			dir->Attributes=Attributes;
+			dir->CTime = getFileTime();
+			dir->CDate = getFileDate();
+			dir->MTime = getFileTime();
+			dir->MDate = getFileDate();
+			dir->ADate = getFileDate();
 			memcpy(dir,fileName,11);
 			WriteBlock(FatBufferLBA);
 			return WriteBlock(FatBufferLBA+FatSectorCount);
 		}
+	}
+	return false;
+}
+/******************************************************
+±£´æÎÄ¼þ»òÄ¿Â¼
+×¢Òâ£º´Ë·½·¨Ê¹ÓÃFatBuffer
+file£ºÒª±£´æµÄÎÄ¼þ
+return	£º³É¹¦·µ»ØTrue
+******************************************************/
+bool FileSave(File* file)
+{
+	ReadBlock(file->DirEntrySector);
+	DIREntry *dir=(DIREntry *)(FatBuffer+sizeof(DIREntry)*file->DirEntryIndex);
+	memcpy(dir->Name.FullName,file->Name.FullName,11);
+	dir->Attributes=file->Attributes.Attribute;
+	dir->HighClust = file->StartCluster>>16;
+	dir->StartCluster = file->StartCluster;
+	dir->Size=file->Size;
+	dir->MTime = getFileTime();
+	dir->MDate = getFileDate();
+	return WriteBlock(file->DirEntrySector);
+}
+bool FileDelete(Cluster DirClust,char fileName[11])
+{
+	File file;
+	memcpy(&file.Name.FullName,fileName,sizeof(fileName));
+	if(FileOpenWithName(DirClust,&file))
+	{
+		if(file.CurrentCluster!=0)
+		{
+			while(fatNextCluster(&file.CurrentCluster))
+			{
+				fatSetFAT(file.StartCluster,0);
+				file.StartCluster = file.CurrentCluster;
+			}
+			fatSetFAT(file.StartCluster,0);
+		return true;
+		}
+	}
+	return false;
+}
+
+bool FileSetPosition(File* file,u32 Position)
+{
+	if(file->Size>Position)
+	{
+		file->CurrentCluster = file->StartCluster;
+		while(Position>BytesPerClust)
+		{
+			fatNextCluster(&file->CurrentCluster);
+		}
+		file->Position = Position;
+		return true;
 	}
 	return false;
 }

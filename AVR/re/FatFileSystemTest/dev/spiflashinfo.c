@@ -38,5 +38,6 @@ prog_char SPIFlashManufacturerID[]=
 prog_SPIFlashInfo SPIFlashInfoTabel[]=
 {
 	//eon
-	{{1,0,0},256,4096},
+	{{1,0,0},SFC_Eon,"EN25T80",256,4096},
+	//{{0x1c,0x31,0x14},"11111111",256,4096u}
 };

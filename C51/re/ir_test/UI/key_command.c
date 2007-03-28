@@ -100,7 +100,7 @@ static void endRecord()
 {
 	RecordHead.RecordHead.Check+=saveRecord();
 	RecordHead.RecordHead.KeyCount = irkeyC+IrCompGroup*sizeof(IrKeyA);
-	while(IrCompGroup!=MAX_IRCOMPGROUP)
+	while(IrCompGroup<MAX_IRCOMPGROUP)
 	{
 		memset(IrKeyA,0,sizeof(IrKeyA));
 		_delay_ms(5);
@@ -653,6 +653,7 @@ void PollingIRkey()
 void _delay_ms(uint8);
 void debugkeyc()
 {
+	ee
 	static i = 0;
 	i++;
 	CurrentRecord=i%28;

@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include <Global.h>
-#include <lcd.h>
-#include "dwstd.h"
-#include "Clock.h"
-#include "spi.h"
+#include <dev/lcd.h>
+#include "system/dwstd.h"
+#include "system/Clock.h"
+#include "dev/spi.h"
 #include "polling.h"
-#include "usart.h"
-#include "card/mmc/MMC.h"
+#include "dev/usart.h"
+#include "dev/MMC.h"
 #include "fs/fat.h"
 #include "../dev/spiflash.h"
 #include "../dev/spiflashpro.h"
@@ -25,7 +25,7 @@ uint8 bbEtime;
 bool ebb;
 bool haveCard=false;
 uint8 bbtime;
-
+File romOut;
 #define ONBB()  DDRD|=(1<<3)
 #define OFFBB() DDRD&=~(1<<3)
 
@@ -88,6 +88,56 @@ void polling10ms()
 		}
 	}
 	//---------------------------------------	
+static bool e = true;
+	if(romOut.DirEntrySector!=0)
+	{
+		if(e)
+		{
+			SPIToSpiFlashMode();
+			SPIFlashErasureAll();
+			e = false;
+		}
+		SPIToFatMode();
+		if(FatReadSector(&romOut,FatBuffer))
+		{
+			SPIToSpiFlashMode();
+			SPIFlashPageProgram(FatBuffer,256);
+			SPIFlashAddress+=256;
+			SPIFlashPageProgram(FatBuffer+256,256);
+			SPIFlashAddress+=256;
+		}
+		else
+		{
+			while(1);
+		}
+		/*if(SPIFlashAddress<1024*1024ul-2)
+		{
+			SPIToSpiFlashMode();
+			SPIFlashRead(FatBuffer,512,1);
+			SPIFlashAddress+=512;
+			SPIToFatMode();
+			FatWriteSector(&romOut,FatBuffer);
+		}
+		else
+		{
+			FileSave(&romOut);
+			while(1);
+		}*/
+	}
+	else
+	{
+		SPIFlashID id = SPIFlashReadID(1);
+		/*if(SPIFlashAddress<1024*1024ul-2)
+		{
+			SPIToSpiFlashMode();
+			SPIFlashRead(FatBuffer,512,1);
+			SPIFlashAddress+=512;
+		}
+		else
+		{
+		SPIFlashAddress=0;
+		}*/
+	}
 
 }
 #ifdef POLLING200MS
@@ -115,22 +165,35 @@ void polling1000ms()
 	time++;
 	showTime();
 	bbONTime(8);
-	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
+	SPIToFatMode();
 	if(haveCard)
 	{
 		if(fatinited)
 		{
-			File f;
-			FatNewFile(0,"yangdewbTXT",0);
-			/*memcpy(&f.Name,"TEST    TXT",11);
-			if(OpenFileWithName(0,&f))
+			if(romOut.DirEntrySector==0)
 			{
-				while(FatReadSector(&f,FatBuffer));
+				memcpy(romOut.Name.FullName,"ROM     BIN",11);
+				//FileNew(0,romOut.Name.FullName,0);
+				FileOpenWithName(0,&romOut);
+				SPIFlashAddress = 0;
+			}
+			/*static bool fir = false;
+			if(!fir)
+			{
+				File f;
+				memcpy(f.Name.FullName,"TEST    BIN",11);
+				FileNew(0,f.Name.FullName,0);
+				if(FileOpenWithName(0,&f))
+				{
+
+					FileSave(&f);
+					fir = true;
+				}
 			}*/
 		}
 		else
 		{
-			haveCard=fatinited=fatInit();
+			haveCard=fatinited=FATInit();
 		}
 		/*for(;i<512;i++)
 		{
@@ -179,11 +242,10 @@ void polling1000ms()
 #endif//POLLING1000MS
 static void iniPoll()
 {
-	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
-	while(!MMCInit());
 	showTime();
 	LCDShowStringAt(16,"HELLO");
-	//SPIFlashSetManufacturer(SFM_Eon);
+	SPIFlashSetCommand(SFC_Eon);
+	//SPIFlashSetCommand(SFM_Eon);
 	//SPIFlashInit();
 
 	//SPIFlashCleanWriteProtect();
@@ -278,7 +340,26 @@ void PollingMain()
 		{
 			//	UpdateDisplay();
 		}
+	/*	SPIToSpiFlashMode();
+	
+	
+	SPIFlashID id = SPIFlashReadID(1);
+	FatBuffer[0]=id.DeviceID1;
+	SPIFlashRead(FatBuffer,512,1);
+	SPIFlashAddress +=512;*/
 	}
 }
+void SPIToFatMode()
+{
+	WaitSPIIdle();
+	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_0,SPI_MSB,SPI_MSTR,SPI_IDIS));
 
+}
+void SPIToSpiFlashMode()
+{
+	WaitSPIIdle();
+	SPSR&=~(1<<SPIF);
+	SPI_Init(GET_SPI_SET(SPI_FOSC_4,SPI_Mode_3,SPI_MSB,SPI_MSTR,SPI_IE));
+	//SPSR|=(1<<SPI2X);
+}
 
