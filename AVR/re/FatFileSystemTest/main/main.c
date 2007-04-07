@@ -7,6 +7,7 @@
 #include "dev/USART.h"
 #include "dev/SPI.h"
 #include "dev/MMC.h"
+#include "dev/spiflash.h"
 //#include "displayAudio.h"
 #include "../ui/Display.h"
 #include "system/Clock.h"

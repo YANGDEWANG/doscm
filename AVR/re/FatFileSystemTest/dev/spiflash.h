@@ -36,10 +36,10 @@ enum SPI_FLASH
 };
 typedef struct SPI_FLASH_COMMAND
 {
-	_uint8 WriteEnable;
-	_uint8 WriteDisable;
+	_uint8 WriteEnableBegin;
+	_uint8 WriteDisableBegin;
 	_uint8 SPIFlashReadStatusRegister;
-	_uint8 SPIFlashWriteStatusRegister;
+	_uint8 SPIFlashWriteStatusRegisterBegin;
 	_uint8 ReadData;
 	_uint8 FastRead;
 	_uint8 PageProgram;
@@ -59,8 +59,8 @@ typedef struct SPI_FLASH_INFO
 	SPIFlashID id;
 	_uint8 Command;
 	char Name[8];
-	_uint8	PageSize;
-	_uint16	PageCount;
+	u16	PageSize;
+	u16	PageCount;
 }SPIFlashInfo;
 typedef SPIFlashInfo prog_SPIFlashInfo PROGMEM;
 
@@ -79,12 +79,13 @@ void static inline WaitSPIIdle()
 {
 	while(!spiIdle);
 }
-void SPIFlashWriteStatusRegister(uint8 srdata);
+#define WaitSPIFlashIdle() WaitSPIIdle()
+void SPIFlashWriteStatusRegisterBegin(uint8 srdata);
 uint8 SPIFlashReadStatusRegister(uint8 devC);
-bool SPIFlashPageProgram(uint8* dat,u16 count);
-bool SPIFlashRead(uint8* dat,u16 count,uint8 devC);
+bool SPIFlashPageProgramBegin(uint8* dat,u16 count);
+bool SPIFlashReadBegin(uint8* dat,u16 count,uint8 devC);
 SPIFlashID SPIFlashReadID(uint8 devC);
-void SPIFlashErasureAll();
-#define SPIFlashCleanWriteProtect() SPIFlashWriteStatusRegister(0)
+void SPIFlashErasureAllBegin();
+#define SPIFlashCleanWriteProtect() SPIFlashWriteStatusRegisterBegin(0)
 
 #endif//_SPI_FLASH_H_

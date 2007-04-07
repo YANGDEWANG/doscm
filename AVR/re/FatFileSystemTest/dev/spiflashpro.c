@@ -21,6 +21,7 @@
 * http://www.gnu.org/copyleft/gpl.html
 */
 #include <global.h>
+#include <string.h>
 #include <avr/pgmspace.h>
 #include <spi.h>
 //#include <intrins.h>
@@ -31,6 +32,7 @@ uint8 SPIFlashManufacturerIDIndex;
 uint16 SPIFlashDevNameIndex;
 u32 SPIFlashSize;
 SPIFlashInfo SPIFlashInfoData;
+u8 SPIFlashBuffer[512];
 File *SpiFlashFile;
 static u8 workMode;
 enum SPIFlashProWorkMode
@@ -89,8 +91,8 @@ void SPIFlashCopy()
 	for(;i<SPIFlashInfoData.PageCount;i++)
 	{
 		SPIFlashAddress = SPIFlashInfoData.PageSize*i;
-		SPIFlashRead(buffer,SPIFlashInfoData.PageSize,0);
-		SPIFlashPageProgram(buffer,SPIFlashInfoData.PageSize);
+		SPIFlashReadBegin(buffer,SPIFlashInfoData.PageSize,0);
+		SPIFlashPageProgramBegin(buffer,SPIFlashInfoData.PageSize);
 	}
 }
 void SPIFlashVerify()
@@ -104,7 +106,7 @@ void SPIFlashVerify()
 	for(;i<SPIFlashInfoData.PageCount;i++)
 	{
 		SPIFlashAddress = SPIFlashInfoData.PageSize*i;
-		SPIFlashRead(buffers,SPIFlashInfoData.PageSize,0);
+		SPIFlashReadBegin(buffers,SPIFlashInfoData.PageSize,0);
 		devC = 1;
 		for(;devC<9;devC++)
 		{
@@ -113,7 +115,7 @@ void SPIFlashVerify()
 				//is err dev
 				break;
 			}
-			SPIFlashRead(buffer2,SPIFlashInfoData.PageSize,devC);
+			SPIFlashReadBegin(buffer2,SPIFlashInfoData.PageSize,devC);
 			for(bc=0;bc<SPIFlashInfoData.PageSize;bc++)
 			{
 				if(buffers[bc]!=buffer2[bc])
@@ -165,14 +167,13 @@ void pollingSpiFlash()
 	{
 	case SFPWM_writing:
 		{
-			SPIToFatMode();
 			if(FatReadSector(SpiFlashFile,FatBuffer))
 			{
-				SPIToSpiFlashMode();
-				SPIFlashPageProgram(FatBuffer,256);
-				SPIFlashAddress+=256;
-				SPIFlashPageProgram(FatBuffer+256,256);
-				SPIFlashAddress+=256;
+				memcpy(SPIFlashBuffer,FatBuffer,512);
+				//WaitSPIFlashIdle();
+				SPIFlashPageProgramBegin(SPIFlashBuffer,256);
+				//WaitSPIFlashIdle();
+				SPIFlashPageProgramBegin(SPIFlashBuffer+256,256);
 			}
 			else
 			{
@@ -182,14 +183,11 @@ void pollingSpiFlash()
 		}
 	case SFPWM_reading:
 		{
-			SPIToFatMode();
 			if(SPIFlashAddress<SPIFlashSize)
 			{
-				SPIToSpiFlashMode();
-				SPIFlashRead(FatBuffer,512,1);
-				SPIFlashAddress+=512;
-				SPIToFatMode();
-				FatWriteSector(SpiFlashFile,FatBuffer);
+				SPIFlashReadBegin(SPIFlashBuffer,512,1);
+				WaitSPIFlashIdle();
+				FatWriteSector(SpiFlashFile,SPIFlashBuffer);
 			}
 			else
 			{
@@ -199,14 +197,24 @@ void pollingSpiFlash()
 		}
 	case SFPWM_Verifying:
 		{
-			SPIToFatMode();
 			if(SPIFlashAddress<SPIFlashSize)
 			{
-				SPIToSpiFlashMode();
-				SPIFlashRead(FatBuffer,512,1);
+				FatReadSector(SpiFlashFile,FatBuffer);
+				u8 i;
+				for(i=0;i<8;i++)
+				{
+					if(SPIFlashWorkMak&(1<<i))
+					{
+						SPIFlashReadBegin(SPIFlashBuffer,512,i);
+						WaitSPIFlashIdle();
+						SPIFlashAddress-=512;
+						if(memcmp(SPIFlashBuffer,FatBuffer,512)!=0)
+						{
+							SPIFlashWorkMak&=~(1<<i);
+						}
+					}
+				}
 				SPIFlashAddress+=512;
-				SPIToFatMode();
-				FatWriteSector(SpiFlashFile,FatBuffer);
 			}
 			else
 			{

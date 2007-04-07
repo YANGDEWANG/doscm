@@ -30,9 +30,9 @@ static uint8 ShowDetailedC;
 //}
 
 
-static void updown(bool ud)
+/*static void updown(bool ud)
 {
-}
+}*/
 
 void PollingKey60ms()
 {	

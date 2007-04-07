@@ -11,7 +11,7 @@
 //----------------------FAT配置-----------------------//
 #define _SYSTEM_FS_FAT_CFG
 //#define FAT_MAX_FILE_NAME_LEN 16
-#define FAT_USE_FILE_BUFFER//定义在文件系统上建立一个临时文件，这样可以避免出现对FATBuffer的争用
+//#define FAT_USE_FILE_BUFFER//定义在文件系统上建立一个临时文件，这样可以避免出现对FATBuffer的争用
 #ifdef FAT_USE_FILE_BUFFER
 #define FILE_BUFFER_NAME "FATTMPFLTMP"
 #endif

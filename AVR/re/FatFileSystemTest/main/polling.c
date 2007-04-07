@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+
 #include <Global.h>
 #include <dev/lcd.h>
 #include "system/dwstd.h"
@@ -10,6 +12,7 @@
 #include "fs/fat.h"
 #include "../dev/spiflash.h"
 #include "../dev/spiflashpro.h"
+
 //#include "TM1618.h"
 //#include "irdev.h"
 //#include "ui\key_command.h"
@@ -94,16 +97,16 @@ static bool e = true;
 		if(e)
 		{
 			SPIToSpiFlashMode();
-			SPIFlashErasureAll();
+			SPIFlashErasureAllBegin();
 			e = false;
 		}
 		SPIToFatMode();
 		if(FatReadSector(&romOut,FatBuffer))
 		{
 			SPIToSpiFlashMode();
-			SPIFlashPageProgram(FatBuffer,256);
+			SPIFlashPageProgramBegin(FatBuffer,256);
 			SPIFlashAddress+=256;
-			SPIFlashPageProgram(FatBuffer+256,256);
+			SPIFlashPageProgramBegin(FatBuffer+256,256);
 			SPIFlashAddress+=256;
 		}
 		else
@@ -113,7 +116,7 @@ static bool e = true;
 		/*if(SPIFlashAddress<1024*1024ul-2)
 		{
 			SPIToSpiFlashMode();
-			SPIFlashRead(FatBuffer,512,1);
+			SPIFlashReadBegin(FatBuffer,512,1);
 			SPIFlashAddress+=512;
 			SPIToFatMode();
 			FatWriteSector(&romOut,FatBuffer);
@@ -126,11 +129,11 @@ static bool e = true;
 	}
 	else
 	{
-		SPIFlashID id = SPIFlashReadID(1);
+//		SPIFlashID id = SPIFlashReadID(1);
 		/*if(SPIFlashAddress<1024*1024ul-2)
 		{
 			SPIToSpiFlashMode();
-			SPIFlashRead(FatBuffer,512,1);
+			SPIFlashReadBegin(FatBuffer,512,1);
 			SPIFlashAddress+=512;
 		}
 		else
@@ -249,12 +252,12 @@ static void iniPoll()
 	//SPIFlashInit();
 
 	//SPIFlashCleanWriteProtect();
-	//SPIFlashErasureAll();
+	//SPIFlashErasureAllBegin();
 	////do
 	////{
-	//SPIFlashRead(UsartBuffer,0,0);
+	//SPIFlashReadBegin(UsartBuffer,0,0);
 
-	//SPIFlashPageProgram(UsartBuffer,0);
+	//SPIFlashPageProgramBegin(UsartBuffer,0);
 	//SPIFlashAddress+=256;
 	//}while(1);
 	////UserEventExitCount =  MaxUserEventCountDown;
@@ -345,7 +348,7 @@ void PollingMain()
 	
 	SPIFlashID id = SPIFlashReadID(1);
 	FatBuffer[0]=id.DeviceID1;
-	SPIFlashRead(FatBuffer,512,1);
+	SPIFlashReadBegin(FatBuffer,512,1);
 	SPIFlashAddress +=512;*/
 	}
 }

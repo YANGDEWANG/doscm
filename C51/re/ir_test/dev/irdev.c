@@ -9,7 +9,9 @@
 #define IR_INT	INT0
 #define IR_IE	IE0
 #define MAX_WAIT_IRPIN_TO_HIGH_TIME 10000u	//最大低电平时间（单位us）//12M晶振
-#define TO_DATAANALYSE_TIME			10000u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振
+#define TO_DATAANALYSE_LONG_TIME	10000u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振
+#define TO_DATAANALYSE__TIME		4000u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振//LX5104
+
 #define IR_CLICK_TIME				50		//（单位us）
 
 static bool wait; //用于有两节的马，取消的一次
@@ -59,7 +61,7 @@ prog_char * code ICNameS[]=
 	"3010",//SAA3010,HS3010						
 	//起始2.5，	设置0.5，	用户5，		键6//14
 
-	"HS3004",				
+	"HS3004",//低电平7.36ms
 	//起始1，	奇偶1，		用户3，		键6//11
 
 	"HS9148",//TC9148			
@@ -86,6 +88,8 @@ prog_char * code ICNameS[]=
 	//1起始,8用户,1 SYNC,8键
 
 	"M50119",
+	"LX5104",
+	//3起始,2用户,7键重复3起始,2用户,7键
 	//M50119
 	//
 	//mitc8d8
@@ -416,7 +420,7 @@ void setData()
 				wait = false;
 				IrInformation.KeyCodeReverse = getDataPPM(3+2*4,20);
 				IrInformation.CustomCodeReverse = getDataPPM(3+2*4+2*8,20);
-				
+
 				IRWait(0);
 			}
 			else
@@ -424,7 +428,7 @@ void setData()
 				wait = true;
 				IrInformation.KeyCode = getDataPPM(3+2*4,20);
 				IrInformation.CustomCode = getDataPPM(3+2*4+2*8,20);
-				
+
 				IRWait(200/CLICK_CYCLE_MS);
 			}
 
@@ -451,6 +455,14 @@ void setData()
 		{
 			IrInformation.KeyCodeReverse = getDataPPM(1,20)&7;
 			IrInformation.KeyCode = getDataPPM(1+2*3,20)&0x7f;
+			break;
+		}
+	case IC_LX5104://3起始,2用户,7键重复3起始,2用户,7键
+		{
+			IrInformation.CustomCode = getDataPPM(3*2,16)&3;
+			IrInformation.KeyCode = getDataPPM(3*2+2*2,16)&0x7f;
+			if(IrInformation.KeyCode==0)
+				ICName = IC_NULL;
 			break;
 		}
 	}
@@ -510,10 +522,27 @@ void dataAnalyse()
 		ICName = IC_M50119;
 	}
 	//HS3004
-	if(IRChangec == 22+1
-		&&checkWarpH(5,IRChangeTime[0])&&checkWarp(147,IRChangeTime[1]))//23
+	if(IRChangec == 22+1)									//23
 	{
-		ICName = IC_HS3004;
+		if(checkWarpH(5,IRChangeTime[0])&&checkWarp(147,IRChangeTime[1]))
+		{
+			ICName = IC_HS3004;
+		}
+		if(checkWarp(24,IRChangeTime[0])
+			&&checkWarpH(8,IRChangeTime[1])
+			&&checkWarp(24,IRChangeTime[2])
+			&&checkWarpH(8,IRChangeTime[3])
+			&&checkWarpH(8,IRChangeTime[4])
+			&&checkWarp(24,IRChangeTime[5]))	
+			/*if(checkWarp(24,IRChangeTime[0])
+			&&checkWarpH(8,IRChangeTime[1])
+			&&checkWarp(24,IRChangeTime[3])
+			&&checkWarpH(8,IRChangeTime[2])
+			&&checkWarpH(8,IRChangeTime[5])
+			&&checkWarp(24,IRChangeTime[4]))*/	
+		{
+			ICName = IC_LX5104;
+		}
 	}
 	//HS9148//IC_PT2268//UPD6124
 	if(IRChangec == 24+1)									//25
@@ -589,7 +618,7 @@ void dataAnalyse()
 		{
 			if(checkWarp(34,IRChangeTime[1]))
 				ICName = IC_LC7464;
-			
+
 		}
 	}
 
@@ -627,11 +656,87 @@ uint16 checkTimeOut()
 	return time.time;
 
 }
+#if 1
+bool ToDataAnalyseTimeLong;
 void IrDevDiv()
 {
 	uint8 ic = 	 IRChangec;
+	uint8 i;
+	uint16 timespan;
 	EA = false;
-	if(checkTimeOut()-oldtime>TO_DATAANALYSE_TIME)
+	timespan= checkTimeOut()-oldtime;
+
+	if(timespan>TO_DATAANALYSE__TIME)
+	{
+
+		if(!ToDataAnalyseTimeLong&&ic<15)
+		{
+			if(timespan<TO_DATAANALYSE_LONG_TIME)
+				ToDataAnalyseTimeLong = true;
+			else
+				for(i=0;i<ic;i++)
+				{
+					if(IRChangeTime[i]>TO_DATAANALYSE__TIME/IR_CLICK_TIME)
+						ToDataAnalyseTimeLong = true;
+				}
+		}
+		if(ToDataAnalyseTimeLong&&timespan<TO_DATAANALYSE_LONG_TIME)
+			goto end;
+		EA = true;
+		if(IRDevState==IR_DEV_INCEPT&&ic)
+		{
+			IRDevState = IR_DEV_DATAANALYSE;
+			while(ic<sizeof(IRChangeTime))
+			{
+				IRChangeTime[ic]=0;
+				ic++;
+			}
+			dataAnalyse();
+			if(ICName != IC_NULL&&!wait)
+			{
+				IRKeyDown = true;
+			}
+			IRDevState = IR_DEV_IDLE;
+			ToDataAnalyseTimeLong = false;
+		}
+	}
+end:
+	EA = true;
+}
+#else
+//void IrDevDiv()
+//{
+//	uint8 ic = 	 IRChangec;
+//	EA = false;
+//	if(checkTimeOut()-oldtime>TO_DATAANALYSE_LONG_TIME)
+//	{
+//		EA = true;
+//		if(IRDevState==IR_DEV_INCEPT&&ic)
+//		{
+//			IRDevState = IR_DEV_DATAANALYSE;
+//			while(ic<sizeof(IRChangeTime))
+//			{
+//				IRChangeTime[ic]=0;
+//				ic++;
+//			}
+//			dataAnalyse();
+//			if(ICName != IC_NULL&&!wait)
+//			{
+//				IRKeyDown = true;
+//			}
+//			IRDevState = IR_DEV_IDLE;
+//		}
+//	}
+//	EA = true;
+//}
+void IrDevDiv()
+{
+	uint8 ic = 	 IRChangec;
+	uint16 timespan;
+	EA = false;
+	timespan= checkTimeOut()-oldtime;
+
+	if(timespan>TO_DATAANALYSE_LONG_TIME)
 	{
 		EA = true;
 		if(IRDevState==IR_DEV_INCEPT&&ic)
@@ -652,6 +757,7 @@ void IrDevDiv()
 	}
 	EA = true;
 }
+#endif
 void PollIR10ms()
 {
 	if(IRDisableSysC)

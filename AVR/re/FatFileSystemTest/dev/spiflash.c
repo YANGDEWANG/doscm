@@ -50,23 +50,23 @@ static void inline activeSlFlash(u8 mak);
 static void inline disableAllSlFlash();
 static void inline activeMsFlash();
 static void activeFlash(uint8 devC);
-static void inline WriteEnable();
-static void inline WriteDisable();
+static void inline WriteEnableBegin();
+static void inline WriteDisableBegin();
 static void startSend(u16 count);
 static void startRead(u16 count);
-static void WriteCom(uint8 com);
-static void SetPageProgramAdd();
-static void SetReadAdd(uint8 devC);
+static void WriteComBegin(uint8 com);
+static void SetPageProgramAddBegin();
+static void SetReadAddBegin(uint8 devC);
 
 void SPIFlashInit();
 void SPIFlashSetCommand(SFM m);
 void inline WaitSPIIdle();
-void SPIFlashWriteStatusRegister(uint8 srdata);
+void SPIFlashWriteStatusRegisterBegin(uint8 srdata);
 uint8 SPIFlashReadStatusRegister(uint8 devC);
-bool SPIFlashPageProgram(uint8* SpiFlash,u16 count);
-bool SPIFlashRead(uint8* SpiFlash,u16 count,uint8 devC);
+bool SPIFlashPageProgramBegin(uint8* SpiFlash,u16 count);
+bool SPIFlashReadBegin(uint8* SpiFlash,u16 count,uint8 devC);
 SPIFlashID SPIFlashReadID(uint8 devC);
-void SPIFlashErasureAll();
+void SPIFlashErasureAllBegin();
 
 //-------------------------------------------------------------------------------//
 static inline void activeSlFlash(u8 mak)
@@ -86,10 +86,10 @@ static inline void activeMsFlash()
 }
 static void activeFlash(uint8 devC)
 {
-	if(devC)
+	if(devC<8)
 	{
 		//SPIFlashCSDDR |= (1<<(devC-1));
-		SPIFlashCSPORT	&= ~(1<<(devC-1));
+		SPIFlashCSPORT	&= ~(1<<(devC));
 	}
 }
 
@@ -138,7 +138,7 @@ static void startRead(u16 count)
 	saveRxData = true;
 	dataCount = count;
 }
-static void WriteCom(uint8 com)
+static void WriteComBegin(uint8 com)
 {
 	WaitSlFlashIdelMak(SPIFlashWorkMak);
 	activeSlFlash(SPIFlashWorkMak);
@@ -146,22 +146,22 @@ static void WriteCom(uint8 com)
 	SpiFlash[0] = com;
 	startSend(1);
 }
-static void inline WriteEnable()
+static void inline WriteEnableBegin()
 {
-	WriteCom(SPIFlashCom.WriteEnable);
+	WriteComBegin(SPIFlashCom.WriteEnableBegin);
 }
-static void inline WriteDisable()
+static void inline WriteDisableBegin()
 {
-	WriteCom(SPIFlashCom.WriteDisable);
+	WriteComBegin(SPIFlashCom.WriteDisableBegin);
 }
-void SPIFlashWriteStatusRegister(uint8 srdata)
+void SPIFlashWriteStatusRegisterBegin(uint8 srdata)
 {
-	WriteEnable();
+	WriteEnableBegin();
 	WaitSPIIdle();
 	activeSlFlash(SPIFlashWorkMak);
 	//saveRxData = true;
 	dataP=SpiFlash;
-	SpiFlash[0] = SPIFlashCom.SPIFlashWriteStatusRegister;
+	SpiFlash[0] = SPIFlashCom.SPIFlashWriteStatusRegisterBegin;
 	SpiFlash[1] = srdata;
 	startSend(2);
 }
@@ -203,15 +203,15 @@ static uint8 WaitSlFlashIdelMak(uint8 mak)
 	}
 	return mak;
 }
-void SPIFlashErasureAll()
+void SPIFlashErasureAllBegin()
 {
-	SPIFlashWriteStatusRegister(0);
-	WriteEnable();
-	WriteCom(SPIFlashCom.EraseAll);
+	SPIFlashWriteStatusRegisterBegin(0);
+	WriteEnableBegin();
+	WriteComBegin(SPIFlashCom.EraseAll);
 }
-static void SetPageProgramAdd()
+static void SetPageProgramAddBegin()
 {
-	WriteEnable();
+	WriteEnableBegin();
 	WaitSPIIdle();
 	DontAutoDisableFlash = true;
 	activeSlFlash(SPIFlashWorkMak);
@@ -222,16 +222,17 @@ static void SetPageProgramAdd()
 	dataP = SpiFlash;
 	startSend(4);
 }
-bool SPIFlashPageProgram(uint8* dat,u16 count)
+bool SPIFlashPageProgramBegin(uint8* dat,u16 count)
 {
-	SPIFlashWriteStatusRegister(0);
-	SetPageProgramAdd();
+	SPIFlashWriteStatusRegisterBegin(0);
+	SetPageProgramAddBegin();
 	WaitSPIIdle();
 	dataP = dat;
 	startSend(count);
+	SPIFlashAddress+=count;
 	return true;
 }
-static void SetReadAdd(uint8 devC)
+static void SetReadAddBegin(uint8 devC)
 {
 	WaitFlashIdel(devC);
 	DontAutoDisableFlash = true;
@@ -245,12 +246,13 @@ static void SetReadAdd(uint8 devC)
 	dataP = SpiFlash;
 	startSend(4);
 }
-bool SPIFlashRead(uint8* dat,u16 count,uint8 devC)
+bool SPIFlashReadBegin(uint8* dat,u16 count,uint8 devC)
 {
-	SetReadAdd(devC);
+	SetReadAddBegin(devC);
 	WaitSPIIdle();
 	dataP = dat;
 	startRead(count);
+	SPIFlashAddress+=count;
 	SPDR = 0;
 	return true;
 }
