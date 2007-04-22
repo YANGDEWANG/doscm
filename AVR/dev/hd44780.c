@@ -6,7 +6,7 @@
 #include <Clock.h>
 
 
-#include "hd44780.h"
+#include <dev/hd44780.h>
 
 //#define GLUE(a, b)     a##b
 //

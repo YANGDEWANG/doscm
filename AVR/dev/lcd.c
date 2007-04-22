@@ -12,9 +12,9 @@
 */
 #include <global.h>
 
-#include "hd44780.h"
-#include "lcd.h"
-
+#include <dev/hd44780.h>
+#include <dev/lcd.h>
+#include "string.h"
 static uint8 charPointer;
 static uint8 linePointer;
 /*
@@ -66,11 +66,11 @@ void LcdMovePointer(uint8 lp,uint8 cp)
 		hd44780_outcmd(HD44780_DDADDR(0x40*lp+cp));
 		/*if(lp==0)
 		{
-			hd44780_outcmd(HD44780_HOME);
+		hd44780_outcmd(HD44780_HOME);
 		}
 		else
 		{
-			
+
 		}*/
 	}
 }
@@ -134,8 +134,7 @@ lcd_putchar(char c)
 
 
 }
-void
-lcd_ShowString(char *s)
+void LCDShowString(char const *s)
 {
 	while(*s)
 	{
@@ -143,11 +142,54 @@ lcd_ShowString(char *s)
 		s++;
 	}
 }
-void
-LCDShowStringAt(uint8 lc,char *s)
+void LCDShowStringRTL(char const *s,u8 slen)
+{
+	s+=slen-1;
+	while(slen--)
+	{
+		lcd_putchar(*s--);
+	}
+}
+void LCDShowStringRTL_At(uint8 lc,char const *s)
+{
+	u8 len = strlen(s);
+	lc -=len-1;
+	LcdMovePointer(lc/LCD_ONE_LINE_CHAR,lc%LCD_ONE_LINE_CHAR);
+	LCDShowString(s);
+}
+void LCDShowString_P(prog_char const *s)
+{
+	char c;
+	while(1)
+	{
+		c=pgm_read_byte(s);
+		if(c==0)
+			return;
+		lcd_putchar(c);
+		s++;
+	}
+}
+void LCDShowStringAt(uint8 lc,char *s)
 {
 	LcdMovePointer(lc/LCD_ONE_LINE_CHAR,lc%LCD_ONE_LINE_CHAR);
-
-lcd_ShowString(s);
+	LCDShowString(s);
+}
+/******************************************************
+从LCD指定位置开始显示字符串
+lc：起始位置
+s ：要显示字符串
+******************************************************/
+void LCDShowString_PAt(uint8 lc,prog_char const *s)
+{
+	LcdMovePointer(lc/LCD_ONE_LINE_CHAR,lc%LCD_ONE_LINE_CHAR);
+	LCDShowString_P(s);
+}
+void LCDClearAt(u8 lc,u8 len)
+{
+	LcdMovePointer(lc/LCD_ONE_LINE_CHAR,lc%LCD_ONE_LINE_CHAR);
+	while(len--)
+	{
+		lcd_putchar(' ');
+	}
 }
 

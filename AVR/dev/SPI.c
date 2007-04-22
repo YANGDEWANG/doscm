@@ -15,7 +15,34 @@ void SPI_SRInit(void)//LSB首发
 	SPCR &=~(1<<MSTR);
 }
 #endif //SPI_SR_U
-
+#ifdef __AVR_ATmega324P__
+/************************************
+初始化SPI口
+cfg：SPI口的配置，使用GET_SPI_SET获取
+************************************/
+void SPI_Init(uint8 cfg)
+{	
+	/* 设置MOSI 和SCK为输出,SS主机为出从机为入，其他为输入 */
+	DDR_SPI  &= ~((1<<MOSI_SPI)|(1<<MISO_SPI)|(1<<SCK_SPI)|(1<<SS_SPI));
+	if(cfg&SPI_MSTR)
+	{
+		DDR_SPI  |= (1<<MOSI_SPI)|(1<<SCK_SPI)|(1<<SS_SPI);
+	}
+	else
+	{
+		DDR_SPI  |= (1<<MOSI_SPI);
+	}
+	SPCR0 = cfg;
+#ifdef SPIDoubleSpeed
+	SPSR0 |= (1<<SPI2X);
+#endif//SPIDoubleSpeed
+}
+void SPIRelease()
+{
+	SPCR0 = 0;
+	DDR_SPI  &= ~((1<<MOSI_SPI)|(1<<MISO_SPI)|(1<<SCK_SPI)|(1<<SS_SPI));
+}
+#else
 /************************************
 初始化SPI口
 cfg：SPI口的配置，使用GET_SPI_SET获取
@@ -37,6 +64,12 @@ void SPI_Init(uint8 cfg)
 	SPSR |= (1<<SPI2X);
 #endif//SPIDoubleSpeed
 }
+void SPIRelease()
+{
+	SPCR = 0;
+	DDR_SPI  &= ~((1<<MOSI_SPI)|(1<<MISO_SPI)|(1<<SCK_SPI)|(1<<SS_SPI));
+}
+#endif
 #ifdef SPI_MASTER_U
 uint8 SPI_MasterTransmit(uint8 cData)
 {
@@ -47,11 +80,7 @@ uint8 SPI_MasterTransmit(uint8 cData)
 	return SPDR;
 }
 #endif //SPI_MASTER_U
-void SPIRelease()
-{
-	SPCR = 0;
-	DDR_SPI  &= ~((1<<MOSI_SPI)|(1<<MISO_SPI)|(1<<SCK_SPI)|(1<<SS_SPI));
-}
+
 #ifdef VSPI
 
 

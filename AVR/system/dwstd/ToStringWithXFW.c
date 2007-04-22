@@ -62,3 +62,4 @@ uint8 ToStringWithXFW(char *outstr,dwstdint d)
 	ReverseString(st,i);
 	return i;
 }
+

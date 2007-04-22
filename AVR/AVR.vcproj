@@ -77,6 +77,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\uCOS2\avr_isr.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\system\boolean.h"
 				>
 			</File>
@@ -86,6 +90,10 @@
 			</File>
 			<File
 				RelativePath=".\cfg\configure.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\system\delay.h"
 				>
 			</File>
 			<File
@@ -121,6 +129,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\uCOS2\includes.h"
+				>
+			</File>
+			<File
 				RelativePath=".\system\FFT\IntFFT_BRIN.c"
 				>
 			</File>
@@ -153,6 +165,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\uCOS2\os_cfg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_cpu.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\fs\path.h"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\card\mmc\protocol.h"
 				>
 			</File>
@@ -177,7 +201,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\dev\TM1618.h"
+				>
+			</File>
+			<File
 				RelativePath=".\cfg\TypeDefing.h"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\ucos_ii.h"
 				>
 			</File>
 			<File
@@ -273,6 +305,54 @@
 				>
 			</File>
 			<File
+				RelativePath=".\uCOS2\os_core.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_cpu_c.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_dbg.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_flag.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_mbox.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_mem.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_mutex.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_q.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_sem.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_task.c"
+				>
+			</File>
+			<File
+				RelativePath=".\uCOS2\os_time.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\fs\path.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\PT2314.c"
 				>
 			</File>
@@ -294,6 +374,10 @@
 			</File>
 			<File
 				RelativePath=".\dev\STF16360EN.c"
+				>
+			</File>
+			<File
+				RelativePath=".\dev\TM1618.c"
 				>
 			</File>
 			<File
@@ -321,10 +405,18 @@
 				>
 			</File>
 			<File
+				RelativePath=".\uCOS2\ucos_ii.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\usart.c"
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\uCOS2\os_cpu_a.s"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

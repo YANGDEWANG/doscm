@@ -1,5 +1,5 @@
 #include <global.h>
-#include "boolean.h"
+#include <system/boolean.h>
 
 #ifdef BOOLEAN_USE_RETURN
 /*

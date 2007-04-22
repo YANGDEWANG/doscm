@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="FatFileSystemTest"
-	ProjectGUID="{5C6CE428-40BC-4462-84B1-D50A76A04AF1}"
+	ProjectGUID="{20C4855F-FF35-486E-BF12-6074423B3786}"
 	RootNamespace="IR_TEST"
 	Keyword="MakeFileProj"
 	>

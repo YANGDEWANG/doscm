@@ -7,7 +7,8 @@
 
 //-----------------EEPROM_EX配置----------------------//
 #define EEPROM_EX_CFG
-#define EEPROM_CHECK_DATA 1 //定义进行数据完整性效验
+#define EEPROM_CHECK_DATA 1		//定义进行数据完整性效验
+//#define EEPROM_EX_FORCE_WRITE	//定义调用EepromWriteEX是将不检测数据是否更改
 #define EEPROM_EX_SIZE 256
 //---------------EEPROM_EX配置结束--------------------//
 

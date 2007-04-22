@@ -12,6 +12,7 @@
  */
 #ifndef _LCD_H_
 #define _LCD_H_
+#include <avr/pgmspace.h>
 #include "hd44780.h"
 #ifndef LCD_CFG
 //---------------LCD配置------------------//
@@ -29,10 +30,10 @@ void	lcd_init(void);
 /*
  * Send one character to the LCD.
  */
-void	lcd_putchar(char c);
+void lcd_putchar(char c);
 
-void lcd_ShowString(char *s);
-
+void LCDShowString(char const *s);
+void LCDShowString_P(prog_char const *s);
 /******************************************************
 移动插入点到指定位置，如果指定位置不能显示，插入点将归0
 lp：行
@@ -45,9 +46,19 @@ lc：起始位置
 s ：要显示字符串
 ******************************************************/
 void LCDShowStringAt(uint8 lc,char *s);
+/******************************************************
+从LCD指定位置开始显示字符串
+lc：起始位置
+s ：要显示字符串
+******************************************************/
+void LCDShowString_PAt(uint8 lc,prog_char const *s);
+
+void LCDShowStringRTL_At(uint8 lc,char const *s);
 /*
 * Clear the display.
 */
 #define LCDClear()	hd44780_outcmd(HD44780_CLR)
+
+void LCDClearAt(u8 lc,u8 len);
 
 #endif//_LCD_H_

@@ -3,23 +3,23 @@
 #ifndef _HD44780_H_
 #define _HD44780_H_
 #include <configure.h>
-
+#ifndef HD44780_CFG
+//-----------------------HD44780_CFG-----------------------//
+#define HD44780_CFG
 //mode
-#ifndef HD44780_MODE_SELECT
-#define HD44780_TWOLINE		1
-#define HD44780_FONT5X10	1
-#endif//HD44780_MODE_SELECT
-
-#ifndef HD44780_PIN
-#define HD44780_PIN
-#define HD44780_COM_P 	D
+#define HD44780_TWOLINE		1//1:two line; 0:one line
+#define HD44780_FONT5X10	1//1:5x10 dot font; 0:5x8 dot font
+//pin
+#define HD44780_COM_P 	B
 #define HD44780_DATA_P 	A
-#define HD44780_RS 		5
-#define HD44780_RW 		6
-#define HD44780_E  		7
-#endif
+#define HD44780_RS 		2
+#define HD44780_RW 		1
+#define HD44780_E  		0
+//-----------------------HD44780_CFG-----------------------//
 
-#ifndef HD44780_PIN
+#endif//HD44780_CFG
+
+#if 0
 #define HD44780_PORT 1
 #define HD44780_RS 6
 #define HD44780_RW 4

@@ -30,6 +30,41 @@
 #define PIN_SPI_MISO 	PIN_SPI&(1<<MISO_SPI)
 #define PIN_SPI_MOSI 	PIN_SPI&(1<<MOSI_SPI)
 
+#ifdef __AVR_ATmega324P__
+//SPI速度等级
+#define SPI_FOSC_4		((0<<SPR01)|(0<<SPR00))//震荡频率除4
+#define SPI_FOSC_16		((0<<SPR01)|(1<<SPR00))//震荡频率除16
+#define SPI_FOSC_64		((1<<SPR01)|(0<<SPR00))//震荡频率除64
+#define SPI_FOSC_128	((1<<SPR01)|(1<<SPR00))//震荡频率除128
+
+//SPI模式
+#define SPI_Mode_0		((0<<CPOL0)|(0<<CPHA0))//CPOL = 0, CPHA = 0 起始沿采样 ( 上升沿) 结束沿设置 ( 下降沿) 0
+#define SPI_Mode_1		((0<<CPOL0)|(1<<CPHA0))//CPOL = 0, CPHA = 1 起始沿设置 ( 上升沿) 结束沿采样 ( 下降沿) 1
+#define SPI_Mode_2		((1<<CPOL0)|(0<<CPHA0))//CPOL = 1, CPHA = 0 起始沿采样 ( 下降沿) 结束沿设置 ( 上升沿) 2
+#define SPI_Mode_3		((1<<CPOL0)|(1<<CPHA0))//CPOL = 1, CPHA = 1 起始沿设置 ( 下降沿) 结束沿采样 ( 上升沿) 3
+
+//位顺序
+#define SPI_LSB			(1<<DORD0)	//LSB首发
+#define SPI_MSB			(0)			//MSB首发
+
+//方式
+#define SPI_MSTR		(1<<MSTR0)	//主机方式
+#define SPI_SR			(0)			//从机方式
+
+//中断开关
+#define SPI_IE			(1<<SPIE0)//开
+#define SPI_IDIS		(0)//关
+/************************************
+获取SPI设置
+fosc：SPI速度等级
+mode：SPI模式
+mstr：方式
+lsb ：位顺序
+ie  ：中断开关
+*************************************/
+#define GET_SPI_SET(fosc,mode,lsb,mstr,ie)	(fosc|mode|lsb|mstr|ie|(1<<SPE0))
+
+#else
 //SPI速度等级
 #define SPI_FOSC_4		((0<<SPR1)|(0<<SPR0))//震荡频率除4
 #define SPI_FOSC_16		((0<<SPR1)|(1<<SPR0))//震荡频率除16
@@ -62,6 +97,8 @@ lsb ：位顺序
 ie  ：中断开关
 *************************************/
 #define GET_SPI_SET(fosc,mode,lsb,mstr,ie)	(fosc|mode|lsb|mstr|ie|(1<<SPE))
+
+#endif
 /*************************************
 初始化SPI口
 cfg：SPI口的配置，使用GET_SPI_SET获取

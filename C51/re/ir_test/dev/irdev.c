@@ -55,7 +55,7 @@ prog_char * code ICNameS[]=
 	"HS6222",					
 	//引导1，	用户低8，	用户高8，	键8，键反8ok
 
-	"TC9028",//TC9012、TC9243	
+	"TC9012",//TC9012、TC9243,TC9028	
 	//引导1，	用户8，		用户8，		键8，键反8ok
 
 	"3010",//SAA3010,HS3010						
@@ -120,10 +120,44 @@ static uint8 IRDisableSysC;
 void ShowIrInformation()
 {
 	ShowString(ICNameS[ICName],0,6);
-	ToStringWithXFW(dislinebuf,IrInformation.CustomCodeReverse);
-	ToStringWithXFW(dislinebuf+2,IrInformation.CustomCode);
-	ToStringWithXFW(dislinebuf+4,IrInformation.KeyCodeReverse);
-	ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
+	memset(dislinebuf,'-',sizeof(dislinebuf));
+	switch(ICName)
+	{
+	
+	case IC_TC9028:
+	case IC_HS6222:
+	case IC_PT2222:
+	case IC_LC7461:
+	case IC_LC7464:
+	case IC_MN6014C5D6:
+	case IC_MN6014C6D6:
+		{
+			ToStringWithXFW(dislinebuf,IrInformation.CustomCodeReverse);
+		}
+	case IC_SHARP:
+	case IC_SAA3010:
+	case IC_PT2268:
+	case IC_HS3004:
+	case IC_HS9148:
+		{
+			ToStringWithXFW(dislinebuf+2,IrInformation.CustomCode);
+			ToStringWithXFW(dislinebuf+4,IrInformation.KeyCodeReverse);
+			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
+			break;
+		}
+	case IC_6014C8D7:
+	
+	case IC_SC50560:
+	case IC_UPD6124:
+	case IC_SC50462:
+	case IC_M50119:
+	case IC_LX5104:
+		{
+			ToStringWithXFW(dislinebuf+2,IrInformation.CustomCode);
+			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
+			break;
+		}
+	}
 	ShowString(dislinebuf,8,8);
 }
 
@@ -285,6 +319,7 @@ void setData()
 		{
 			if(IRChangeTime[3]>120)//判断奇偶（奇次就下面）
 				IrInformation.KeyCodeReverse = 1;
+#if 1
 			i=3;
 			ic=5;
 			dat=0;
@@ -308,15 +343,15 @@ void setData()
 				ic+=2;
 			}while(--i);
 			IrInformation.KeyCode = dat;
+#else
+			IrInformation.CustomCode=getDataPPM(5,120)&7;
+			IrInformation.KeyCode=getDataPPM(5+2*3,120)&63;
+#endif
 			break;
 		}
 	case IC_SAA3010:
 		{
 			ic=2;
-			//if(checkWarp(34,IRChangeTime[0]))
-			//{
-			//ic=1;
-			//}
 			oldbit = true;
 			for(b=0;b<2;b++)
 			{
@@ -373,8 +408,8 @@ void setData()
 		{
 			IrInformation.CustomCode = getDataPPM(3,20);//用户码底八位
 			IrInformation.CustomCodeReverse = getDataPPM(3+2*8,20)&0x1f;//用户码高5位
-			IrInformation.KeyCode = getDataPPM(53,20);
-			IrInformation.KeyCodeReverse = getDataPPM(53+2*8,20);
+			IrInformation.KeyCode = getDataPPM(3+4*13,20);
+			IrInformation.KeyCodeReverse = getDataPPM(3+4*13+2*8,20);
 			break;
 		}
 	case IC_UPD6124:
@@ -415,20 +450,19 @@ void setData()
 		}
 	case IC_SHARP://
 		{
+			IrInformation.CustomCode = getDataPPM(1,27)&31;
 			if(wait)
 			{
 				wait = false;
-				IrInformation.KeyCodeReverse = getDataPPM(3+2*4,20);
-				IrInformation.CustomCodeReverse = getDataPPM(3+2*4+2*8,20);
+				IrInformation.KeyCodeReverse = getDataPPM(1+2*5,27);
+				//IrInformation.CustomCodeReverse = getDataPPM(3+2*4+2*8,20);
 
 				IRWait(0);
 			}
 			else
 			{
 				wait = true;
-				IrInformation.KeyCode = getDataPPM(3+2*4,20);
-				IrInformation.CustomCode = getDataPPM(3+2*4+2*8,20);
-
+				IrInformation.KeyCode = getDataPPM(1+2*5,27);
 				IRWait(200/CLICK_CYCLE_MS);
 			}
 
@@ -477,17 +511,17 @@ void dataAnalyse()
 		{
 		case IC_LC7461:
 		case IC_HS6222:
-		case IC_PT2222:
+			/*case IC_PT2222:
 			{
-				if(IRChangec == 3
-					&&checkWarp(9000/IR_CLICK_TIME,IRChangeTime[0])
-					&&(checkWarp(2250/IR_CLICK_TIME,IRChangeTime[1])||checkWarp(4500/IR_CLICK_TIME,IRChangeTime[1]))
-					)
-				{
-					IRKeyHold = true;
-				}
-				break;
+			if(IRChangec == 3
+			&&checkWarp(9000/IR_CLICK_TIME,IRChangeTime[0])
+			&&(checkWarp(2250/IR_CLICK_TIME,IRChangeTime[1])||checkWarp(4500/IR_CLICK_TIME,IRChangeTime[1]))
+			)
+			{
+			IRKeyHold = true;
 			}
+			break;
+			}*/
 		case IC_TC9028:
 			{
 				if(IRChangec==5
@@ -543,6 +577,11 @@ void dataAnalyse()
 		{
 			ICName = IC_LX5104;
 		}
+	}
+	if(IRChangec == 22+1)									//23
+	{
+		if(checkWarp(34,IRChangeTime[0]+IRChangeTime[1]))
+			ICName = IC_HS9148;
 	}
 	//HS9148//IC_PT2268//UPD6124
 	if(IRChangec == 24+1)									//25
