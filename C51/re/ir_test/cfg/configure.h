@@ -7,7 +7,7 @@
 #include <intrins.h>
 #include "TypeDefing.h"
 
-
+#define CUSTOMERS_SHENGZHONG
 
 #define CLOCK_M(c) (c*1000000)
 

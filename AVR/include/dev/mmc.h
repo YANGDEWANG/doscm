@@ -163,7 +163,7 @@ bool MMCReadBlock(uint8 *Buffer,uint16 Bytes);
 addr  ：扇区编号
 Buffer：数据储蓄区
 ****************************************************************************/
-uint8 MMCReadSector(uint32 addr,uint8 *Buffer);
+bool MMCReadSector(uint32 addr,uint8 *Buffer);
 /****************************************************************************
 读取一个32bit数
 sector：扇区编号

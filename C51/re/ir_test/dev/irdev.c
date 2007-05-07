@@ -61,6 +61,9 @@ prog_char * code ICNameS[]=
 	"3010",//SAA3010,HS3010						
 	//起始2.5，	设置0.5，	用户5，		键6//14
 
+	"8521",
+	//IC_8521起始2.5，	设置0.5，	用户5，		键6//14
+
 	"HS3004",//低电平7.36ms
 	//起始1，	奇偶1，		用户3，		键6//11
 
@@ -117,6 +120,7 @@ volatile uint8 IRChangec;//输入电平变化计数
 uint8 perchdata IRChangeTime[IR_CHANGE_TIME_SIZE];
 IRData IrInformation;
 static uint8 IRDisableSysC;
+#ifdef CUSTOMERS_SHENGZHONG
 void ShowIrInformation()
 {
 	ShowString(ICNameS[ICName],0,6);
@@ -124,7 +128,54 @@ void ShowIrInformation()
 	switch(ICName)
 	{
 	
-	case IC_TC9028:
+	case IC_TC9012:
+	case IC_HS6222:
+	case IC_PT2222:
+	case IC_LC7461:
+	case IC_LC7464:
+	case IC_MN6014C5D6:
+	case IC_MN6014C6D6:
+		{
+			ToStringWithXFW(dislinebuf+2,IrInformation.CustomCodeReverse);
+		}
+	case IC_SHARP:
+	case IC_SAA3010:
+	case IC_8521:
+	case IC_PT2268:
+	case IC_HS3004:
+	case IC_HS9148:
+		{
+			ToStringWithXFW(dislinebuf,IrInformation.CustomCode);
+			/*if(ICName!=IC_PT2222
+				&&ICName!=IC_SAA3010
+				&&ICName!=IC_TC9012)
+			ToStringWithXFW(dislinebuf+4,IrInformation.KeyCodeReverse);*/
+			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
+			break;
+		}
+	case IC_6014C8D7:
+	case IC_SC50560:
+	case IC_UPD6124:
+	case IC_SC50462:
+	case IC_M50119:
+	case IC_LX5104:
+		{
+			ToStringWithXFW(dislinebuf,IrInformation.CustomCode);
+			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
+			break;
+		}
+	}
+	ShowString(dislinebuf,8,8);
+}
+#else
+void ShowIrInformation()
+{
+	ShowString(ICNameS[ICName],0,6);
+	memset(dislinebuf,'-',sizeof(dislinebuf));
+	switch(ICName)
+	{
+	
+	case IC_TC9012:
 	case IC_HS6222:
 	case IC_PT2222:
 	case IC_LC7461:
@@ -160,7 +211,7 @@ void ShowIrInformation()
 	}
 	ShowString(dislinebuf,8,8);
 }
-
+#endif
 void IniIrdev()
 {
 	//ShowIrInformation();
@@ -349,7 +400,47 @@ void setData()
 #endif
 			break;
 		}
+#ifdef CUSTOMERS_SHENGZHONG
 	case IC_SAA3010:
+		{
+			ic=0;
+			oldbit = true;
+			i = 7;
+			for(b=0;b<2;b++)
+			{
+				dat = 0;
+				
+				do
+				{
+					dat=dat<<1;
+					if(IRChangeTime[ic]>20)//与上一比特相反
+					{	
+						oldbit=!oldbit;
+					}
+					else
+					{
+						ic++;//与上一比特相同跳过一个电平
+					}
+					ic++;
+					if(oldbit)dat++;
+				}while(--i);
+				if(b==0)
+				{
+					IrInformation.CustomCode = dat&0x1f;
+					IrInformation.KeyCodeReverse = (dat>>5)&1;
+					/*if(!(dat&1<<6))
+					{
+						ICName = IC_8521;
+					}*/
+					i = 6;
+				}
+				else
+					IrInformation.KeyCode = dat;
+			}
+			break;
+		}
+#else
+			case IC_SAA3010:
 		{
 			ic=2;
 			oldbit = true;
@@ -381,7 +472,8 @@ void setData()
 			}
 			break;
 		}
-	case IC_TC9028:
+#endif
+	case IC_TC9012:
 	case IC_HS6222:
 	case IC_PT2222:
 		{
@@ -390,7 +482,7 @@ void setData()
 			IrInformation.CustomCodeReverse = getDataPPM(3+2*8,20);
 			IrInformation.KeyCode = getDataPPM(3+4*8,20);
 			IrInformation.KeyCodeReverse = getDataPPM(3+6*8,20);
-			if(IrInformation.CustomCode==IrInformation.CustomCodeReverse&&ICName!=IC_TC9028)
+			if(IrInformation.CustomCode==IrInformation.CustomCodeReverse&&ICName!=IC_TC9012)
 			{
 				ICName = IC_HS6222;
 			}
@@ -398,7 +490,6 @@ void setData()
 		}
 	case IC_PT2268:
 		{
-
 			IrInformation.CustomCode = getDataPPM(0,25);
 			IrInformation.KeyCode = getDataPPM(2*8,25);
 			IrInformation.KeyCodeReverse = getDataPPM(4*8,25);
@@ -487,7 +578,7 @@ void setData()
 		}
 	case IC_M50119://3用户,7键
 		{
-			IrInformation.KeyCodeReverse = getDataPPM(1,20)&7;
+			IrInformation.CustomCode = getDataPPM(1,20)&7;
 			IrInformation.KeyCode = getDataPPM(1+2*3,20)&0x7f;
 			break;
 		}
@@ -522,7 +613,7 @@ void dataAnalyse()
 			}
 			break;
 			}*/
-		case IC_TC9028:
+		case IC_TC9012:
 			{
 				if(IRChangec==5
 					&&checkWarp(4480/IR_CLICK_TIME,IRChangeTime[0])
@@ -648,7 +739,7 @@ void dataAnalyse()
 		&&checkWarp(4480/IR_CLICK_TIME,IRChangeTime[1]))
 	{
 		if(IRChangec == 66+1)											//67
-			ICName = IC_TC9028;
+			ICName = IC_TC9012;
 	}
 	//IC_LC7464
 	if(IRChangec == 99)									//99

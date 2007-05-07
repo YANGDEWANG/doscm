@@ -33,6 +33,8 @@
 #define TM1618_SOFT_SPI 1//
 
 #define TM1618DISPLAY_MODE	(0)//定义显示模式0:4位；1:5位；2:6位；3:7位；
+#define TM1618_LUM		(7)//亮度不能大于7
+
 //定义数据接口引脚
 #define TM1618_POPT	D
 #define	TM1618_STB	0

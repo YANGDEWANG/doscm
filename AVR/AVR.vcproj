@@ -293,6 +293,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dev\card\mmc\mmc.b"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\card\mmc\mmc.c"
 				>
 			</File>

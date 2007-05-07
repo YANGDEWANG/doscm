@@ -79,7 +79,10 @@ static u8 TM1618Transmit(u8 cData)//TM1618_MasterTransmitLSB
 #define ADD_SET			(3<<6)
 #define DISPLAY_CONTROL (2<<6)
 #define DISPLAY_SWITCH  (1<<3)
-#define DISPLAY_LUM		(7)
+
+#if TM1618_LUM>7
+#error TM1618_LUM 不能大于7
+#endif
 
 
 uint8 TM1618MemImage[TM1618MEMIMAGE_SIZE];
@@ -113,7 +116,7 @@ void TM1618UpdateAll()
 	}
 	setSTB();//PWSTB:1us
 	clSTB();
-	TM1618Transmit(DISPLAY_CONTROL|DISPLAY_SWITCH|DISPLAY_LUM);
+	TM1618Transmit(DISPLAY_CONTROL|DISPLAY_SWITCH|TM1618_LUM);
 	setSTB();
 }
 void TM1618ReadKey()		

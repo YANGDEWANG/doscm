@@ -1,16 +1,3 @@
-/**************************************************************************************
-//------------------ MMC/SD-Card Reading and Writing implementation -------------------
-//FileName     : mmc.c
-//Function     : Connect AVR to MMC/SD 
-//Created by   : ZhengYanbo
-//Created date : 15/08/2005
-//Version      : V1.2
-//Last Modified: 19/08/2005
-//Filesystem   : Read or Write MMC without any filesystem
-
-//CopyRight (c) 2005 ZhengYanbo
-//Email: Datazyb_007@163.com
-****************************************************************************************/
 #include <global.h>
 #include <util\delay.h>
 #include "dev\mmc.h"
@@ -22,7 +9,6 @@
 #define MMC_ININIT_CLOCK_DELAY_US 50
 #define BLOCK_SIZE_EX2 9//BLOCK_SIZE等于2的BLOCK_SIZE_EX2次方
 #define SINGLE_BLOCK_WRITE_TOKEN 0xfe
-static bool inInit; 
 #ifdef MMC_SOFT_SPI
 #ifdef MMC_SOFT_EXTPULLUP
 #define clSCL() sbi(DDR_MMC,MMC_CLK)
@@ -51,8 +37,9 @@ static bool inInit;
 #define MMC_Enable() cbi(PORT_MMC,MMC_CS)
 
 #endif
+uint8 MMCWriteCommand_InInit(uint8 cmd,uint8 succeed);
 //inline
-void Write_Byte_MMC(u8 cData)
+void static Write_Byte_MMC(u8 cData)
 {
 	uint8 i;
 	for(i=0;i<8;i++)
@@ -71,10 +58,10 @@ void Write_Byte_MMC(u8 cData)
 	}
 	setDO();
 }
-//u8 inline Read_Byte_MMC()
-u8 Read_Byte_MMC()
+u8 inline static Read_Byte_MMC()
+//u8 static Read_Byte_MMC()
 {
-	uint8 i,ReadData=0;
+	uint8 i,ReadData;
 	setDO();
 	for(i=0;i<8;i++)
 	{
@@ -160,8 +147,6 @@ bool MMCInit(void)
 //****************************************************************************
 {  
 	uint8 i;
-	//uint8 CMD[] = {0x40,0x00,0x00,0x00,0x00,0x95};
-	inInit = true;
 	MMC_Port_Init();
 	//_delay_us(250);  //Wait MMC/SD ready...
 	for (i=0;i<0x0f;i++) 
@@ -169,21 +154,19 @@ bool MMCInit(void)
 		Write_Byte_MMC_InInit(0xff); //send 74 clock at least!!!
 	}
 	//Send Command CMD0 to MMC/SD Card
-	//retry 200 times to send CMD0 command 
-	if(MMCWriteCommand(MMC_GO_IDLE_STATE,0,1)!=1)
+	if(MMCWriteCommand_InInit(MMC_GO_IDLE_STATE,1)!=1)
 	{
 		MMC_Disable();  //set MMC_Chip_Select to high
 		return(false);//CMD0 Error!
 	}
 
 	//Send Command CMD1 to MMC/SD-Card
-	if(MMCWriteCommand(MMC_SEND_OP_COND,0,0)!=0)
+	if(MMCWriteCommand_InInit(MMC_SEND_OP_COND,0)!=0)
 	{
 		MMC_Disable();  //set MMC_Chip_Select to high
 		return(false);//CMD0 Error!
 	}
 	MMC_Disable();  //set MMC_Chip_Select to high 
-	inInit = false;
 	return(true); //All commands have been taken.
 } 
 #ifdef MMC_INFO_READ_U
@@ -260,6 +243,32 @@ bool MMCGetVolumeInfo(void)
 }
 
 #endif//MMC_INFO_READ_U
+
+uint8 MMCWriteCommand_InInit(uint8 cmd,uint8 succeed)
+{
+	uint8 tmp;
+	uint8 retry=0,retrySendC = MMC_WAITE_RETRY_COUNT;
+	do{
+		//send 8 Clock Impulse
+		Write_Byte_MMC_InInit(0xFF);
+		MMC_Enable();       //SD卡使能
+		Write_Byte_MMC_InInit(cmd|0x40);   //送头命令
+		Write_Byte_MMC_InInit(0);
+		Write_Byte_MMC_InInit(0);     //send 6 Byte Command to MMC/SD-Card
+		Write_Byte_MMC_InInit(0);
+		Write_Byte_MMC_InInit(0);
+		Write_Byte_MMC_InInit(0x95);       //仅仅对RESET有效的CRC效验码
+		do 
+		{  
+			tmp = Read_Byte_MMC_InInit();
+			retry++;
+		}
+		while((tmp==0xff)&&(retry<MMC_WAITE_RETRY_COUNT));  //当没有收到有效的命令的时候
+
+	}
+	while(tmp!=succeed&&(--retrySendC));
+	return(tmp);
+}
 //****************************************************************************
 //Send a Command to MMC/SD-Card
 //Return: the second uint8 of response register of MMC/SD-Card
@@ -269,48 +278,24 @@ uint8 MMCWriteCommand(uint8 cmd,uint32 arg,uint8 succeed)
 	uint8 tmp;
 	uint8 retry=0,retrySendC = MMC_WAITE_RETRY_COUNT;
 	do{
-		if(inInit)
-		{
-			//send 8 Clock Impulse
-			Write_Byte_MMC_InInit(0xFF);
-			//set MMC_Chip_Select to low (MMC/SD-Card active)
-			MMC_Enable();       //SD卡使能
-			Write_Byte_MMC_InInit(cmd|0x40);   //送头命令
-			Write_Byte_MMC_InInit(arg>>24);
-			Write_Byte_MMC_InInit(arg>>16);     //send 6 Byte Command to MMC/SD-Card
-			Write_Byte_MMC_InInit(arg>>8);
-			Write_Byte_MMC_InInit(arg&0xff);
-			Write_Byte_MMC_InInit(0x95);       //仅仅对RESET有效的CRC效验码
-			//get 8 bit response
-			//Read_Byte_MMC(); //read the first byte,ignore it. 
-			do 
-			{  //Only last 8 bit is used here.Read it out. 
-				tmp = Read_Byte_MMC_InInit();
-				retry++;
-			}
-			while((tmp==0xff)&&(retry<MMC_WAITE_RETRY_COUNT));  //当没有收到有效的命令的时候
+		//send 8 Clock Impulse
+		Write_Byte_MMC(0xFF);
+		//set MMC_Chip_Select to low (MMC/SD-Card active)
+		MMC_Enable();       //SD卡使能
+		Write_Byte_MMC(cmd|0x40);   //送头命令
+		Write_Byte_MMC(arg>>24);
+		Write_Byte_MMC(arg>>16);     //send 6 Byte Command to MMC/SD-Card
+		Write_Byte_MMC(arg>>8);
+		Write_Byte_MMC(arg&0xff);
+		Write_Byte_MMC(0x95);       //仅仅对RESET有效的CRC效验码
+		//get 8 bit response
+		//Read_Byte_MMC(); //read the first byte,ignore it. 
+		do 
+		{  //Only last 8 bit is used here.Read it out. 
+			tmp = Read_Byte_MMC();
+			retry++;
 		}
-		else
-		{
-			//send 8 Clock Impulse
-			Write_Byte_MMC(0xFF);
-			//set MMC_Chip_Select to low (MMC/SD-Card active)
-			MMC_Enable();       //SD卡使能
-			Write_Byte_MMC(cmd|0x40);   //送头命令
-			Write_Byte_MMC(arg>>24);
-			Write_Byte_MMC(arg>>16);     //send 6 Byte Command to MMC/SD-Card
-			Write_Byte_MMC(arg>>8);
-			Write_Byte_MMC(arg&0xff);
-			Write_Byte_MMC(0x95);       //仅仅对RESET有效的CRC效验码
-			//get 8 bit response
-			//Read_Byte_MMC(); //read the first byte,ignore it. 
-			do 
-			{  //Only last 8 bit is used here.Read it out. 
-				tmp = Read_Byte_MMC();
-				retry++;
-			}
-			while((tmp==0xff)&&(retry<MMC_WAITE_RETRY_COUNT));  //当没有收到有效的命令的时候
-		}
+		while((tmp==0xff)&&(retry<MMC_WAITE_RETRY_COUNT));  //当没有收到有效的命令的时候
 	}
 	while(tmp!=succeed&&(--retrySendC));
 	return(tmp);
@@ -431,24 +416,17 @@ re:
 addr  ：扇区编号
 Buffer：数据储蓄区
 ****************************************************************************/
-uint8 MMCReadSector(uint32 addr,uint8 *Buffer)
+bool MMCReadSector(uint32 addr,uint8 *Buffer)
 {	
-	//Command 16 is reading Blocks from MMC/SD-Card
-	//uint8 CMD[] = {0x51,0x00,0x00,0x00,0x00,0xFF}; 
-	//Send Command CMD to MMC/SD-Card
-	//Retry 100 times to send command.
 	u8 retuy = MMC_ERROR_RETRY_COUN;
-re:
-	if((MMCWriteCommand(MMC_READ_SINGLE_BLOCK,addr<<9,0)==0)
-		&&MMCReadBlockAt(Buffer,512,0,512))
+	while(retuy--)
 	{
-		MMC_Disable();
-		return true;
-	}
-	else
-	{
-		retuy--;
-		if(retuy)goto re;
+		if((MMCWriteCommand(MMC_READ_SINGLE_BLOCK,addr<<9,0)==0)
+			&&MMCReadBlockAt(Buffer,512,0,512))
+		{
+			MMC_Disable();
+			return true;
+		}
 	}
 	MMC_Disable();
 	return false; //block write Error!

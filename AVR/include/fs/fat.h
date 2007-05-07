@@ -10,7 +10,8 @@
 #ifndef _SYSTEM_FS_FAT_CFG
 //----------------------FAT配置-----------------------//
 #define _SYSTEM_FS_FAT_CFG
-#define FFW_INDEXANDEXTNAME_U
+#define FAT12_EN				1//打开FAT12支持
+#define FFW_INDEXANDEXTNAME_EN	1
 //#define FAT_USE_FILE_BUFFER//定义在文件系统上建立一个临时文件，这样可以避免出现对FATBuffer的争用
 #ifdef FAT_USE_FILE_BUFFER
 #define FILE_BUFFER_NAME "FATTMPFLTMP"
@@ -334,7 +335,7 @@ return	：查到文件返回True，并填写file中的其他字段
 bool FileOpenWithFullName(Cluster DirClust,File *file);
 
 
-#ifdef FFW_INDEXANDEXTNAME_U
+#if FFW_INDEXANDEXTNAME_EN>0
 /******************************************************
 打开第index个扩展名为Ext的文件
 注意：此方法使用FatBuffer
@@ -353,7 +354,7 @@ path	：要打开的文件的相对路径
 return	：查到文件返回True，并填写file中的其他字段
 ******************************************************/
 bool FileOpenWithPath(Cluster DirClust,File *file,char* path);
-#endif//FFW_INDEXANDEXTNAME_U
+#endif//FFW_INDEXANDEXTNAME_EN
 
 /******************************************************
 打开目录中第index个目录
