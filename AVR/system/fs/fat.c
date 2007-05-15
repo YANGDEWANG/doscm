@@ -224,7 +224,7 @@ u32 fatNextEmptyCluster(u32 cluster)
 						offset+=2;
 					break;
 				}
-				#if FAT12_EN>0
+#if FAT12_EN>0
 			case FAT12:
 				{
 					if(fat12NextIsHbyte)
@@ -290,7 +290,7 @@ bool fatNextCluster(Cluster *cluster)
 	{    // Ò»¸ö±íÏîÎª2bytes(16 bits)
 		nextCluster=MMCReadu16(sector,offset);
 	}
-	#if FAT12_EN>0
+#if FAT12_EN>0
 	else if(FatType==FAT12)
 	{	// Ò»¸ö±íÏîÎª1.5bytes(12 bits)
 		if(offset==(BytesPerSector-1))
@@ -408,8 +408,8 @@ re:
 		{
 			if(!onfenqu)
 			{
-onfenqu = true;
-goto re;
+				onfenqu = true;
+				goto re;
 			}
 			return false;
 		}
@@ -548,13 +548,13 @@ bool static FileFind()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖÐ³ý±íÃ÷Îª[²éÕÒ½á¹û]ÒÔÍâµÄ×
 						}
 						break;
 					}
-					case FFW_StartCluster:
+				case FFW_StartCluster:
 					{
-						
-						if(dir->StartCluster==FindFileParameter.Parameter.Parameter.StartCluster)
-							{
-								goto su;
-							}
+						//if(dir->StartCluster==FindFileParameter.Parameter.Parameter.StartCluster)
+						if((((u32)(dir->HighClust)<<16)|dir->StartCluster)==FindFileParameter.Parameter.Parameter.StartCluster)
+						{
+							goto su;
+						}
 						break;
 					}
 #if FFW_INDEXANDEXTNAME_EN>0
@@ -799,7 +799,7 @@ u16 FileReadSector(File* file,u8 buffer[512])
 			fatNextCluster(&(file->CurrentCluster));
 			/*if(!))
 			{
-				return 0;
+			return 0;
 			}*/
 		}
 		file->Position+=512;
@@ -985,7 +985,7 @@ return£º³É¹¦¶ÁÈ¡µÄ×Ö½ÚÊý
 ******************************************************/
 u16 FileRead(File* file,u8* buffer,u16 count)
 {
-	
+
 	u16 offset = file->Position%512;
 	u16 cpycount = 512-offset;
 	u16 readedCount = 0;

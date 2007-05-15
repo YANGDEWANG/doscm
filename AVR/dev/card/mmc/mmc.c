@@ -4,8 +4,8 @@
 #include "protocol.h"
 #include "dev\spi.h"
 #include "string.h"
-#define MMC_WAITE_RETRY_COUNT 200
-#define MMC_ERROR_RETRY_COUN  5
+#define MMC_WAITE_RETRY_COUNT 255
+#define MMC_ERROR_RETRY_COUN  10
 #define MMC_ININIT_CLOCK_DELAY_US 50
 #define BLOCK_SIZE_EX2 9//BLOCK_SIZE等于2的BLOCK_SIZE_EX2次方
 #define SINGLE_BLOCK_WRITE_TOKEN 0xfe
@@ -131,7 +131,7 @@ u8 Write_Byte_MMC_InInit(u8 cData)
 void static inline MMC_Port_Init(void)
 //****************************************************************************
 {
-	
+
 	sbi(DDR_MMC,MMC_CS); 
 	sbi(PORT_MMC,MMC_CS);	//Config ports 
 #ifdef MMC_SOFT_SPI
@@ -143,6 +143,8 @@ void static inline MMC_Port_Init(void)
 #endif
 //****************************************************************************
 //Routine for Init MMC/SD card(SPI-MODE)
+u32 NACClockCycles;
+
 bool MMCInit(void)
 //****************************************************************************
 {  
@@ -166,7 +168,84 @@ bool MMCInit(void)
 		MMC_Disable();  //set MMC_Chip_Select to high
 		return(false);//CMD0 Error!
 	}
+	if(MMCWriteCommand(MMC_SEND_CSD,0,0)!=0)
+	{
+		MMC_Disable();
+		return(false); //block write Error!
+	}
+	NACClockCycles = 500;
+	MMC_CSD csd;
+	MMCReadBlock(csd.dat,sizeof(csd)); //read 16 bytes
+	//10 * (TAAC *FOP + 100 * NSAC)
+	NACClockCycles=100*csd.mmc_csd_file.NSAC;
+//taac
+//2:0 time unit
+//0=1ns, 1=10ns, 2=100ns, 3=1μs, 4=10μs,
+//5=100μs, 6=1ms, 7=10ms
+//6:3 time value
+//0=reserved, 1=1.0, 2=1.2, 3=1.3, 4=1.5, 5=2.0,
+//6=2.5, 7=3.0, 8=3.5, 9=4.0, A=4.5, B=5.0, C=5.5,
+//D=6.0, E=7.0, F=8.0
+	i = csd.mmc_csd_file.TAAC_UNIT;
+	u32 tmp =1;
+	for(;i>0;i--)
+	{
+		tmp*=10;
+	}
+	switch(csd.mmc_csd_file.TAAC_VALUE)
+	{
+	case 2:
+	case 3:
+	case 4:
+	case 5:
+		{
+			tmp*=2;
+			break;
+		}
+	case 6:
+	case 7:
+		{
+			tmp*=3;
+			break;
+		}
+	case 8:
+	case 9:
+		{
+			tmp*=4;
+			break;
+		}
+	case 10:
+	case 11:
+		{
+			tmp*=5;
+			break;
+		}
+	case 12:
+	case 13:
+		{
+			tmp*=6;
+			break;
+		}
+	case 14:
+		{
+			tmp*=7;
+			break;
+		}
+	case 15:
+		{
+			tmp*=8;
+			break;
+		}
+	}
+	tmp*=(_CPU_CLOCK_/1000000ul/12);
+	NACClockCycles+=tmp/1000;
+	NACClockCycles*=10;
+	if(NACClockCycles < 500)
+	{
+		NACClockCycles = 500;
+	}
 	MMC_Disable();  //set MMC_Chip_Select to high 
+
 	return(true); //All commands have been taken.
 } 
 #ifdef MMC_INFO_READ_U
@@ -210,7 +289,7 @@ bool Read_CSD_MMC(uint8 *Buffer)
 // 	name of the media 
 bool MMCGetVolumeInfo(void)
 {   
-	union mmc_csd re;
+	MMC_CSD re;
 	// read the CSD register
 	if(!Read_CSD_MMC(re.dat))
 		return false;
@@ -249,6 +328,7 @@ uint8 MMCWriteCommand_InInit(uint8 cmd,uint8 succeed)
 	uint8 tmp;
 	uint8 retry=0,retrySendC = MMC_WAITE_RETRY_COUNT;
 	do{
+		MMC_Disable();
 		//send 8 Clock Impulse
 		Write_Byte_MMC_InInit(0xFF);
 		MMC_Enable();       //SD卡使能
@@ -278,6 +358,7 @@ uint8 MMCWriteCommand(uint8 cmd,uint32 arg,uint8 succeed)
 	uint8 tmp;
 	uint8 retry=0,retrySendC = MMC_WAITE_RETRY_COUNT;
 	do{
+		MMC_Disable();    
 		//send 8 Clock Impulse
 		Write_Byte_MMC(0xFF);
 		//set MMC_Chip_Select to low (MMC/SD-Card active)
@@ -292,6 +373,7 @@ uint8 MMCWriteCommand(uint8 cmd,uint32 arg,uint8 succeed)
 		//Read_Byte_MMC(); //read the first byte,ignore it. 
 		do 
 		{  //Only last 8 bit is used here.Read it out. 
+			//Read_Byte_MMC();
 			tmp = Read_Byte_MMC();
 			retry++;
 		}
@@ -359,15 +441,29 @@ bool MMCReadBlockAt(uint8 *Buffer,uint16 size,uint16 offset,uint16 Bytes)
 	uint8 retry;
 	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
 	retry=0;
-
+	u8 retuyerr = MMC_ERROR_RETRY_COUN;
+	u32 c=NACClockCycles;
 	while (Read_Byte_MMC() != MMC_STARTBLOCK_READ)
 	{
-		retry++;
-		if(retry==MMC_WAITE_RETRY_COUNT) 
+		c--;
+		if(c==0)
 		{
 			MMC_Disable();
 			return(false); //block write Error!
 		}
+		//retry++;
+		//if(retry==MMC_WAITE_RETRY_COUNT)
+		//{
+		//	if(retuyerr)
+		//	{
+		//		retuyerr--;
+		//	}
+		//	else
+		//	{
+		//		MMC_Disable();
+		//		return(false); //block write Error!
+		//	}
+		//}
 	}
 	for (i=0;i<offset;i++)
 	{
@@ -419,9 +515,10 @@ Buffer：数据储蓄区
 bool MMCReadSector(uint32 addr,uint8 *Buffer)
 {	
 	u8 retuy = MMC_ERROR_RETRY_COUN;
+	addr = addr<<9;
 	while(retuy--)
 	{
-		if((MMCWriteCommand(MMC_READ_SINGLE_BLOCK,addr<<9,0)==0)
+		if((MMCWriteCommand(MMC_READ_SINGLE_BLOCK,addr,0)==0)
 			&&MMCReadBlockAt(Buffer,512,0,512))
 		{
 			MMC_Disable();

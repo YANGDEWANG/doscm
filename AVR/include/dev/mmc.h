@@ -65,7 +65,7 @@ struct mmc_cid {
 	uint8		fwrev;
 	uint8		month;
 };
-union mmc_csd
+typedef union MMCCSD
 {
 	struct 
 	{
@@ -73,8 +73,10 @@ union mmc_csd
 		uint8	SPEC_VERS :4;//System specification version  R [125:122]
 		uint8	CSD_STRUCTURE :2;//CSD structure  R [127:126]
 
-		uint8	TAAC :8;//data read access-time-1  R [119:112]
-
+		//uint8	TAAC :8;//data read access-time-1  R [119:112]
+		uint8	TAAC_UNIT :3;
+		uint8	TAAC_VALUE :4;
+		uint8	TAAC_re :1;
 		uint8	NSAC :8;// R [111:104]
 
 		uint8	TRAN_SPEED :8;//max. data transfer rate  R [103:96]
@@ -134,7 +136,7 @@ union mmc_csd
 		uint8	CRC:7;// CRC 7 R/W/E [7:1]
 	}mmc_csd_file;
 	uint8 dat[16];
-};
+}MMC_CSD;
 
 //extern	BUFFER_TYPE sectorBuffer; //512 bytes for sector buffer
 
