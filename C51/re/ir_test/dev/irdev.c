@@ -11,7 +11,9 @@
 #define MAX_WAIT_IRPIN_TO_HIGH_TIME 10000u	//最大低电平时间（单位us）//12M晶振
 #define TO_DATAANALYSE_LONG_TIME	10000u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振
 #define TO_DATAANALYSE__TIME		4000u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振//LX5104
+//#define TO_DATAANALYSE_LONG_TIME	220u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振
 
+//#define TO_DATAANALYSE__TIME		220u	//由数据接收转到分析数据等待的时间（单位us）//12M晶振//LX5104
 #define IR_CLICK_TIME				50		//（单位us）
 
 static bool wait; //用于有两节的马，取消的一次
@@ -363,7 +365,7 @@ void setData()
 				ic+=2;
 			}while(--i);
 			IrInformation.KeyCode = dat;
-			IRDisable(54/CLICK_CYCLE_MS+1);//禁止在54ms内在接收数据//跳过重复码，有点不明智:)等待好的解决方法
+			//IRDisable(54/CLICK_CYCLE_MS+1);//禁止在54ms内在接收数据//跳过重复码，有点不明智:)等待好的解决方法
 			break;
 		}
 	case IC_HS3004:
@@ -541,13 +543,16 @@ void setData()
 		}
 	case IC_SHARP://
 		{
+#if 1
+			IrInformation.CustomCode = getDataPPM(1,27)&31;
+			IrInformation.KeyCode = getDataPPM(1+2*5,27);
+#else
+
 			IrInformation.CustomCode = getDataPPM(1,27)&31;
 			if(wait)
 			{
 				wait = false;
 				IrInformation.KeyCodeReverse = getDataPPM(1+2*5,27);
-				//IrInformation.CustomCodeReverse = getDataPPM(3+2*4+2*8,20);
-
 				IRWait(0);
 			}
 			else
@@ -556,12 +561,7 @@ void setData()
 				IrInformation.KeyCode = getDataPPM(1+2*5,27);
 				IRWait(200/CLICK_CYCLE_MS);
 			}
-
-			//IrInformation.CustomCodeReverse = getDataPPM(3,20);
-			//IrInformation.CustomCode = getDataPPM(3+2*8,20);
-			//IrInformation.KeyCode = getDataPPM(3+2*4*8,20);
-			//IrInformation.KeyCodeReverse = getDataPPM(3+2*5*8,20);
-			//IRDisable(60/CLICK_CYCLE_MS+1);//禁止在54ms内在接收数据//跳过重复码，有点不明智:)等待好的解决方法
+#endif
 			break;
 		}
 	case IC_SC50462://8用户,8键
@@ -899,5 +899,9 @@ void PollIR10ms()
 			wait = false;
 			IniIrdev();
 		}
+	}
+	else
+	{
+		wait = false;
 	}
 }

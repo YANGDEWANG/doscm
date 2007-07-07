@@ -23,16 +23,17 @@ static uint8 REPkeyC = KEY_REPEAT_TIME;
 static uint8 ShowDetailedC;
 #endif//SHOW_DETAILED
 uint8 irkeyC;
-uint8 IrKeyA[16];
-#define MAX_IRCOMPGROUP 3
+IRData IrKeyA[4];
+//#define MAX_IRCOMPGROUP 15
+#define MAX_IRCOMPGROUP 0x7f
 uint8 IrCompGroup;//每个Record被分为4个Group
-#define MAX_RECORD_COUNT 27
+#define MAX_RECORD_COUNT 0
 uint8 CurrentRecord;//总共28个Record（0-27）
 IRRecordHead RecordHead;
 bool MultiCustomCode;//允许多个CustomCode
 uint8 OldIRKey;//上一次接受到的遥控麻子
 //bool notifyKeyDown;//为PollingIRkey准备的当有面板按键操作时被置1
-#define getRecordAt24c02Choice() (CurrentRecord/4+1)//第一个256用于储蓄RecordHead
+#define getRecordAt24c02Choice() ((IrCompGroup>>4)+1)//第一个256用于储蓄RecordHead
 
 void setAllDisTo(char c)
 {
@@ -77,29 +78,30 @@ static uint8 getCheck()//效验值为所有数据和的按位取反
 {
 	uint8 i=0;
 	uint8 d=0;
+	uint8*dp=IrKeyA;
 	for(;i<sizeof(IrKeyA);i++)
 	{
-		d+=IrKeyA[i];
+		d+=*dp++;
 	}
 	return ~d;
 }
 static uint8 loadRecord()
 {
 	At24c02Choice = getRecordAt24c02Choice();
-	Read24c02((CurrentRecord<<6) | (IrCompGroup<<4),IrKeyA,sizeof(IrKeyA));
+	Read24c02((IrCompGroup<<4),IrKeyA,sizeof(IrKeyA));
 	return getCheck();
 }
 
 static uint8 saveRecord()
 {
 	At24c02Choice = getRecordAt24c02Choice();
-	Write24c02((CurrentRecord<<6) | (IrCompGroup<<4),IrKeyA,sizeof(IrKeyA));
+	Write24c02((IrCompGroup<<4),IrKeyA,sizeof(IrKeyA));
 	return getCheck();
 }
 static void endRecord()
 {
 	RecordHead.RecordHead.Check+=saveRecord();
-	RecordHead.RecordHead.KeyCount = irkeyC+IrCompGroup*sizeof(IrKeyA);
+	RecordHead.RecordHead.KeyCount = irkeyC+(uint16)IrCompGroup*4;
 	while(IrCompGroup<MAX_IRCOMPGROUP)
 	{
 		memset(IrKeyA,0,sizeof(IrKeyA));
@@ -129,19 +131,35 @@ static uint8 getkey()
 static void CheckRecordData()
 {
 	uint8 check=0;
-	uint8 c=3;
+	//uint8 c=MAX_IRCOMPGROUP;
+	uint8 add = 0;
 	IrCompGroup = 0;
 	irkeyC=0;//开始比较需要的
 	loadRecordHead();
-	_delay_ms(5);
-	At24c02Choice = getRecordAt24c02Choice();
-	Read24c02((CurrentRecord<<6),IrKeyA,sizeof(IrKeyA));
-	check+=getCheck();
-	do
+	
+	while(IrCompGroup<MAX_IRCOMPGROUP+1)
 	{
-		Read24c02Stream(IrKeyA,sizeof(IrKeyA));
+		_delay_ms(5);
+		add+=sizeof(IrKeyA);
+		At24c02Choice = getRecordAt24c02Choice();
+		Read24c02(add,IrKeyA,sizeof(IrKeyA));
+		//Read24c02Stream(IrKeyA,sizeof(IrKeyA));
 		check+=getCheck();
-	}while(--c);
+		IrCompGroup++;
+	}
+	//At24c02Choice = getRecordAt24c02Choice();
+	//Read24c02(0,IrKeyA,sizeof(IrKeyA));
+	//check+=getCheck();
+	//do
+	//{
+	//	_delay_ms(5);
+	//	add+=sizeof(IrKeyA);
+	//	At24c02Choice = getRecordAt24c02Choice();
+	//	Read24c02(add,IrKeyA,sizeof(IrKeyA));
+	//	//Read24c02Stream(IrKeyA,sizeof(IrKeyA));
+	//	check+=getCheck();
+	//}while(--c);
+	IrCompGroup=0;
 	if(RecordHead.RecordHead.Check!=check)
 	{
 		ErrorCode = EC_RecordCheck;
@@ -461,6 +479,7 @@ static void keyE(){
 }
 void PollingIRkey()
 {
+//	IrData *keyd;
 	bool samekey = false;
 	if(IRKeyDown)
 	{
@@ -542,7 +561,7 @@ void PollingIRkey()
 		case WS_IR_COMP:
 			{
 				ShowIrInformation();
-				if(IrCompGroup*sizeof(IrKeyA)+irkeyC==RecordHead.RecordHead.KeyCount
+				if(IrCompGroup*4+irkeyC==RecordHead.RecordHead.KeyCount
 					&&!samekey)//end//相同键避免归0以便继续显pass
 				{
 					//next ir
@@ -551,7 +570,7 @@ void PollingIRkey()
 					loadRecord();
 
 				}
-				if(irkeyC>sizeof(IrKeyA)-1)
+				if(irkeyC>3)
 				{
 					//next grup
 					irkeyC=0;
@@ -566,27 +585,24 @@ void PollingIRkey()
 					}
 					loadRecord();
 				}
-				if(RecordHead.RecordHead.ICName != ICName)
-				{
-					icE();
-				}else if(!MultiCustomCode
-					&&(RecordHead.RecordHead.CustomCode != IrInformation.CustomCode
-					||RecordHead.RecordHead.CustomCodeReverse != IrInformation.CustomCodeReverse))
-				{
-					codeE();
-				}else if(IrKeyA[irkeyC] != IrInformation.KeyCode&&!samekey)
+				//if(RecordHead.RecordHead.ICName != ICName)
+				//{
+				//	icE();
+				//}else 
+					if((memcmp(IrKeyA+irkeyC,&IrInformation,sizeof(IRData))!=0)
+					&&(!samekey))
 				{
 					keyE();
-				} 
+				}
 				else 
 				{
 					if(!samekey)irkeyC++;
-					if(IrCompGroup*sizeof(IrKeyA)+irkeyC==RecordHead.RecordHead.KeyCount)
+					if(IrCompGroup*4+irkeyC==RecordHead.RecordHead.KeyCount)
 					{
 						ShowString(" -PASS-",8,8);
 						bbtime = 30;
 					}
-					ShowUint8(7,IrCompGroup*sizeof(IrKeyA)+irkeyC);
+					ShowUint8(7,IrCompGroup*4+irkeyC);
 					break;
 				}
 				ShowUint8(7,IrCompGroup*sizeof(IrKeyA)+irkeyC);
@@ -600,26 +616,8 @@ void PollingIRkey()
 					RecordHead.RecordHead.CustomCodeReverse= IrInformation.CustomCodeReverse;
 					RecordHead.RecordHead.ICName = ICName;
 				}
-				else//check CustomCode
-				{
-					if(!MultiCustomCode//允许多个CustomCode
-						&&(RecordHead.RecordHead.CustomCode!=IrInformation.CustomCode
-						||RecordHead.RecordHead.CustomCodeReverse != IrInformation.CustomCodeReverse))
-					{
-						ErrorCode = EC_CustomCodeComp;
-
-						ShowUint8(7,IrCompGroup*sizeof(IrKeyA)+irkeyC);
-						ShowIrInformation();
-						codeE();
-						return;
-					}
-					if(RecordHead.RecordHead.ICName != ICName)
-					{
-						icE();
-						return;
-					}
-				}
-				if(irkeyC>sizeof(IrKeyA)-1)
+				
+				if(irkeyC>3)
 				{
 					//nextgrup
 					if(IrCompGroup<MAX_IRCOMPGROUP)
@@ -635,12 +633,13 @@ void PollingIRkey()
 						break;
 					}
 				}
-				IrKeyA[irkeyC] = IrInformation.KeyCode;
+				memcpy(&IrKeyA[irkeyC],&IrInformation,sizeof(IRData));
+				//IrKeyA[irkeyC] = IrInformation.KeyCode;
 				if(!samekey)
 				{
 					irkeyC++;
 				}
-				ShowUint8(7,IrCompGroup*sizeof(IrKeyA)+irkeyC);
+				ShowUint8(7,IrCompGroup*4+irkeyC);
 				ShowIrInformation();
 				break;
 			}

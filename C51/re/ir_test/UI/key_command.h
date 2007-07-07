@@ -23,7 +23,7 @@ typedef union _IR_RECORD_HEAD
 	_uint8 dat[5];
 	struct
 	{
-		_uint8 KeyCount:7;
+		_uint16 KeyCount;
 		_uint8 MultiCustomCode:1;
 		_uint8 ICName;
 		_uint8 CustomCode;

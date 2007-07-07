@@ -121,6 +121,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\main\key_command.c"
+				>
+			</File>
+			<File
 				RelativePath=".\main\main.c"
 				>
 			</File>
