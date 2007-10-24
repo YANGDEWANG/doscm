@@ -7,6 +7,7 @@
 #include <arith.h>
 #include "dev\irdev.h"
 #include <at24c02.h>
+#define ERRRELOAD_COUNT	0
 //#define SHOW_DETAILED
 #define CUSTO_MNAME_LC (8+5)
 #define showErrStr(s) ShowString(s,0,6)
@@ -15,7 +16,9 @@ void setSTB0();
 void clSTB0();
 void setSTB1();
 void clSTB1();
-
+#if ERRRELOAD_COUNT>0
+uint8 ErrReloadCount;
+#endif
 static bool caShowState;
 static uint8 oldk;
 static uint8 REPkeyC = KEY_REPEAT_TIME;
@@ -32,9 +35,10 @@ uint8 CurrentRecord;//总共28个Record（0-27）
 IRRecordHead RecordHead;
 bool MultiCustomCode;//允许多个CustomCode
 uint8 OldIRKey;//上一次接受到的遥控麻子
+uint8 OldIRKeyR;
 //bool notifyKeyDown;//为PollingIRkey准备的当有面板按键操作时被置1
 #define getRecordAt24c02Choice() ((IrCompGroup>>4)+1)//第一个256用于储蓄RecordHead
-
+IRData FirstKey;
 void setAllDisTo(char c)
 {
 
@@ -136,7 +140,7 @@ static void CheckRecordData()
 	IrCompGroup = 0;
 	irkeyC=0;//开始比较需要的
 	loadRecordHead();
-	
+
 	while(IrCompGroup<MAX_IRCOMPGROUP+1)
 	{
 		_delay_ms(5);
@@ -168,6 +172,7 @@ static void CheckRecordData()
 	{
 		_delay_ms(5);//todu
 		loadRecord();
+		FirstKey = *((IRData*)IrKeyA);
 	}
 }
 static void updown(bool ud)
@@ -319,7 +324,7 @@ void PollingKey60ms()
 					WorkState = WS_IR_COMP;
 					break;
 					}*/
-					case WS_IR_COMP:
+				case WS_IR_COMP:
 					{
 						CheckRecordData();
 						break;
@@ -464,22 +469,22 @@ void ShowState()
 	}
 	//UpdateDisplay();
 }
-
+/*
 static void icE(){
-	bberr();
-	showErrStr("ERR IC");
+bberr();
+showErrStr("ERR IC");
 }
 static void codeE(){
-	bberr();
-	showErrStr("ERR C");
-}
+bberr();
+showErrStr("ERR C");
+} */
 static void keyE(){
 	bberr();
 	showErrStr("ERR K");
 }
 void PollingIRkey()
 {
-//	IrData *keyd;
+	//	IrData *keyd;
 	bool samekey = false;
 	if(IRKeyDown)
 	{
@@ -518,7 +523,7 @@ void PollingIRkey()
 			}
 		}
 
-		if(OldIRKey==IrInformation.KeyCode)
+		if(OldIRKey==IrInformation.KeyCode&&OldIRKeyR==IrInformation.KeyCodeReverse)
 		{
 			samekey = true;
 			if(bbtime==0)
@@ -589,13 +594,38 @@ void PollingIRkey()
 				//{
 				//	icE();
 				//}else 
-					if((memcmp(IrKeyA+irkeyC,&IrInformation,sizeof(IRData))!=0)
+				if((memcmp(IrKeyA+irkeyC,&IrInformation,sizeof(IRData))!=0)
 					&&(!samekey))
 				{
 					keyE();
+					if(memcmp(&FirstKey,&IrInformation,sizeof(IRData))==0)
+				{
+						//next ir
+						IrCompGroup=0;
+						irkeyC=0;
+						loadRecord();
+						ShowString("RESTART",8,8);
+					}
+#if ERRRELOAD_COUNT>0
+					//if(!samekey)
+					ErrReloadCount++;
+					if(ErrReloadCount>ERRRELOAD_COUNT)
+					{
+						ErrReloadCount=0;
+						//next ir
+						IrCompGroup=0;
+						irkeyC=0;
+						loadRecord();
+						ShowString("RESTART",8,8);
+						//break;
+					}
+#endif //ERRRELOAD_COUNT>0
 				}
 				else 
 				{
+#if ERRRELOAD_COUNT>0
+					ErrReloadCount = 0;
+#endif //ERRRELOAD_COUNT>0
 					if(!samekey)irkeyC++;
 					if(IrCompGroup*4+irkeyC==RecordHead.RecordHead.KeyCount)
 					{
@@ -616,7 +646,7 @@ void PollingIRkey()
 					RecordHead.RecordHead.CustomCodeReverse= IrInformation.CustomCodeReverse;
 					RecordHead.RecordHead.ICName = ICName;
 				}
-				
+
 				if(irkeyC>3)
 				{
 					//nextgrup
@@ -645,6 +675,7 @@ void PollingIRkey()
 			}
 		}
 		OldIRKey=IrInformation.KeyCode;
+		OldIRKeyR =IrInformation.KeyCodeReverse;
 	}
 
 }
@@ -653,7 +684,7 @@ void _delay_ms(uint8);
 void debugkeyc()
 {
 	ee
-	static i = 0;
+		static i = 0;
 	i++;
 	CurrentRecord=i%28;
 	IrCompGroup =0;

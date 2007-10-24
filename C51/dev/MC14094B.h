@@ -25,18 +25,19 @@
  */
 
 #include <configure.h>
-
+#ifndef MC14094B_CFG
+//---------------MC14094B_CFG--------------------//
+#define MC14094B_CFG
 
 #define MC14094B_MAX_BYTE	1//每次写入的字节数
 #define MC14094B_MSB		1//定义使用MSB否则使用LSB
-
 //PIN
-#ifndef STROBE_MC14094B_PIN
-#define STROBE_MC14094B_PIN (P1^0)
-#endif
+#define MC14094B_STROBE_PIN (P1^0)
+//---------------MC14094B_CFG--------------------//
+#endif//MC14094B_CFG
 
 //定义数据接口引脚
-sbit STROBE_MC14094B = STROBE_MC14094B_PIN;
+sbit MC14094B_STROBE = MC14094B_STROBE_PIN;
 
 extern void IniMC14094B();
 extern void MC14094BWrite(uint8 *dat);

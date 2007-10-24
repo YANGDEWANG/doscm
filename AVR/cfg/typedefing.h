@@ -8,8 +8,8 @@ typedef int8_t 		int8;
 typedef int16_t		int16;
 typedef int32_t		int32;
 typedef int64_t		int64;
-typedef uint8_t		uchar;
-typedef uint16_t	uint;
+typedef u8		uchar;
+typedef u16	uint;
 typedef uint32_t	ulong;
 typedef uchar		BYTE;
 typedef uchar		uint8;
@@ -26,6 +26,12 @@ typedef	uint16	u16;
 typedef	uint32	u32;
 typedef	uint64	u64;
 
+typedef i16		f8;
+#define Q8(X) \
+	((X < 0.0) ? (int)(256*(X) - 0.5) : (int)(256*(X)+0.5)) 
+typedef i16		f15;
+#define Q15(X) \
+   ((X < 0.0) ? (int)(32768*(X) - 0.5) : (int)(32767*(X) + 0.5)) 
 typedef uchar	_uchar;
 typedef uint	_uint;
 typedef ulong	_ulong;
@@ -105,10 +111,12 @@ typedef union
 #define GPORT(x)       GLUE(PORT, x)
 #define GDDR(x)        GLUE(DDR, x)
 #define GPIN(x)        GLUE(PIN, x)
-#define abs(x)	(x>0?x:-x)
+#define abs(x)	((x)>0?(x):-(x))
+
 #define cbi(p,b) (p&=~(1<<b))
 #define sbi(p,b) (p|=(1<<b))
-
+#define brs(p,b) (p&(1<<b))
+#define brc(p,b) (!brs(p,b))
 static void inline dwmemset(void *dst,u8 dat,u16 size)
 {
 	u16 i;

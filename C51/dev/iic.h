@@ -30,25 +30,36 @@
 
 #include <configure.h>
 
+#ifndef I2C_CGF
+
+//-------------I2C_CGF----------------//
+#define I2C_CGF
+#define I2C_V2
 //#define IIC_MULTI_MATER
 //#define I2C_WRITEBYTE_U
 //定义数据接口引脚
-#ifndef SDA_I2C_PIN
 #define SDA_I2C_PIN (P0^0)
-#endif//SDA_I2C_PIN
-#ifndef SCL_I2C_PIN
 #define SCL_I2C_PIN (P0^1)
-#endif//SDA_I2C_PIN
+#define IIC_WAITCYCLE 1 //定义等待慢速设备的时间 
+
+//-------------I2C_CGF----------------//
+
+#endif//I2C_CGF
 
 sbit SDA_I2C=SDA_I2C_PIN;
 sbit SCL_I2C=SCL_I2C_PIN;
-#define IIC_WAITCYCLE 1 //定义等待慢速设备的时间 
-
-
 extern bool I2CStart(uint8,bool);			//寻址从机1:地址2:读/写:true=read re:true=成功
 
 
 #ifdef I2C_V2
+/***************************************************
+写一个字节串到指定设备 
+add:	设备地址 
+dat:	数据首字节指针 
+count:	串长度 
+return:	成功写入字节数
+*****************************************************/
+uint8 I2CWriteStream(uint8 add,uint8* dat,uint8 count);
 /***************************************************
 写一个字节串到指定设备 
 add:	设备地址 

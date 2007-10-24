@@ -50,7 +50,7 @@ void ISPWriteFlashPage(uint8 PageAdd)
 	SPI_MasterTransmit(PageAdd<<5);
 	SPI_MasterTransmit(ISP_Write_Flash_Page_3);
 }
-void ISPWriteEEPROM(uint16_t add,uint8 data)
+void ISPWriteEEPROM(u16 add,uint8 data)
 {
 	SPI_MasterTransmit(ISP_Write_EEPROM_0);
 	SPI_MasterTransmit(ISP_Write_EEPROM_1&add>>8);
@@ -102,9 +102,9 @@ uint8 ISPReadLockBit()
 	SPI_MasterTransmit(ISP_Read_LockBit_2);
 	return SPI_MasterTransmit(ISP_Read_LockBit_3);
 }
-uint8 ISPReadFlash(uint16_t add)
+uint8 ISPReadFlash(u16 add)
 {
-	uint16_t tmp = add/2;
+	u16 tmp = add/2;
 	if(add%2)
 	{
 		SPI_MasterTransmit(ISP_Read_FlashH_0);
@@ -117,7 +117,7 @@ uint8 ISPReadFlash(uint16_t add)
 	SPI_MasterTransmit((uint8)tmp);
 	return SPI_MasterTransmit(ISP_Read_Flash_3);
 }
-uint8 ISPReadEEPROM(uint16_t add)
+uint8 ISPReadEEPROM(u16 add)
 {
 	SPI_MasterTransmit(ISP_Read_EEPROM_0);
 	SPI_MasterTransmit(ISP_Read_EEPROM_1&(add>>8));

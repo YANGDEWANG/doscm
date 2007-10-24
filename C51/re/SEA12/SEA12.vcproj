@@ -1,9 +1,9 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="gb2312"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="SEA12"
-	ProjectGUID="{8E17D6D8-6BA8-4227-B423-D94C71D92533}"
+	ProjectGUID="{4EAC805B-7129-4D3D-B28D-F5BB03D39D05}"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="gb2312"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -28,7 +28,7 @@
 				CleanCommandLine=""
 				Output=""
 				PreprocessorDefinitions="__AVR_ATmega16__"
-				IncludeSearchPath="G:\WinAVR\avr\include\util;G:\WinAVR\avr\include\compat;G:\WinAVR\avr\include\avr;G:\WinAVR\avr\include;&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)cfg&quot;"
+				IncludeSearchPath="G:\WinAVR\avr\include\util;G:\WinAVR\avr\include\compat;G:\WinAVR\avr\include\avr;G:\WinAVR\avr\include;&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)include&quot;;&quot;$(ProjectDir)cfg&quot;"
 				ForcedIncludes=""
 				AssemblySearchPath=""
 				ForcedUsingAssemblies=""
@@ -114,6 +114,14 @@
 			</File>
 			<File
 				RelativePath=".\include\system\FFT.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\gui\gdi.h"
+				>
+			</File>
+			<File
+				RelativePath=".\include\gui\geometry.h"
 				>
 			</File>
 			<File
@@ -216,6 +224,10 @@
 				RelativePath=".\include\dev\usart.h"
 				>
 			</File>
+			<File
+				RelativePath=".\include\gui\windows.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -253,11 +265,47 @@
 				>
 			</File>
 			<File
+				RelativePath=".\system\fractional\f152flt.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\fractional\f82flt.c"
+				>
+			</File>
+			<File
 				RelativePath=".\system\fs\fat.c"
 				>
 			</File>
 			<File
 				RelativePath=".\system\FFT\FFT_Code_Tables.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\dwstd\FloatToString.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\fractional\flt2f15.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\fractional\flt2f8.c"
+				>
+			</File>
+			<File
+				RelativePath=".\system\fractional.c"
+				>
+			</File>
+			<File
+				RelativePath=".\include\system\fractional.h"
+				>
+			</File>
+			<File
+				RelativePath=".\gui\gdi.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gui\geometry.c"
 				>
 			</File>
 			<File
@@ -414,6 +462,10 @@
 			</File>
 			<File
 				RelativePath=".\dev\usart.c"
+				>
+			</File>
+			<File
+				RelativePath=".\gui\windows.c"
 				>
 			</File>
 		</Filter>

@@ -25,10 +25,10 @@
 #define POPT_SPI	GPORT(SPI_POPT)
 #define PIN_SPI 	GPIN(SPI_POPT)
 //pin
-#define PIN_SPI_SS 		PIN_SPI&(1<<SS_SPI)
-#define PIN_SPI_SCK 	PIN_SPI&(1<<SCK_SPI)
-#define PIN_SPI_MISO 	PIN_SPI&(1<<MISO_SPI)
-#define PIN_SPI_MOSI 	PIN_SPI&(1<<MOSI_SPI)
+#define PIN_SPI_SS 		(PIN_SPI&(1<<SS_SPI))
+#define PIN_SPI_SCK 	(PIN_SPI&(1<<SCK_SPI))
+#define PIN_SPI_MISO 	(PIN_SPI&(1<<MISO_SPI))
+#define PIN_SPI_MOSI 	(PIN_SPI&(1<<MOSI_SPI))
 
 #ifdef __AVR_ATmega324P__
 //SPI速度等级
@@ -88,6 +88,10 @@ ie  ：中断开关
 //中断开关
 #define SPI_IE			(1<<SPIE)//开
 #define SPI_IDIS		(0)//关
+
+//SPI开关
+#define SPI_E			(1<<SPE)//开
+#define SPI_DIS			(0)//关
 /************************************
 获取SPI设置
 fosc：SPI速度等级
@@ -96,7 +100,8 @@ mstr：方式
 lsb ：位顺序
 ie  ：中断开关
 *************************************/
-#define GET_SPI_SET(fosc,mode,lsb,mstr,ie)	(fosc|mode|lsb|mstr|ie|(1<<SPE))
+#define GET_SPI_SET_EXT(fosc,mode,lsb,mstr,ie,e)	(fosc|mode|lsb|mstr|ie|e)
+#define GET_SPI_SET(fosc,mode,lsb,mstr,ie)			(fosc|mode|lsb|mstr|ie|(1<<SPE))
 
 #endif
 /*************************************

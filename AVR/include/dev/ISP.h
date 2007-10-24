@@ -167,12 +167,12 @@ extern void ISPIni();
 extern void ISPErasure();
 extern void ISPWriteLockBit(uint8 data);
 extern void ISPWriteFlashPage(uint8 PageAdd);
-extern void ISPWriteEEPROM(uint16_t add,uint8 data);
+extern void ISPWriteEEPROM(u16 add,uint8 data);
 extern void ISPWriteFuseBit(uint8 add,uint8 data);
 extern void ISPLoadFlashPage(uint8 add,uint8 data);
 extern uint8 ISPReadLockBit();
-extern uint8 ISPReadFlash(uint16_t add);
-extern uint8 ISPReadEEPROM(uint16_t add);
+extern uint8 ISPReadFlash(u16 add);
+extern uint8 ISPReadEEPROM(u16 add);
 extern uint8 ISPRead_FuseBit(uint8 add);
 extern uint8 ISPReadAdjustByte(uint8 add);
 

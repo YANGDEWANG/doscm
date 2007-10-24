@@ -14,14 +14,14 @@ bool ISP_Erasure()
 	return true;
 
 }
-bool ISP_WriteFlash(prog_char* data,uint16_t size)
+bool ISP_WriteFlash(prog_char* data,u16 size)
 {
 	if(size>Flash_Size||(!ISPEnable()))
 	{
 		return false;
 	}
 	/////////////WriteFlash//////////////
-	uint16_t writed = 0,i=0,k=0;
+	u16 writed = 0,i=0,k=0;
 	uint8 td;
 	while(writed<size)
 	{
@@ -41,13 +41,13 @@ bool ISP_WriteFlash(prog_char* data,uint16_t size)
 	ISPDisable();
 	return true;
 }
-bool ISP_WriteEeporm(prog_char* data,uint16_t size)
+bool ISP_WriteEeporm(prog_char* data,u16 size)
 {
 	if(size>Eeporm_Size||(!ISPEnable()))
 	{
 		return false;
 	}
-		uint16_t i;
+		u16 i;
 	uint8	td;
 	for(i=0;i<size;i++)
 	{
@@ -66,13 +66,13 @@ bool ISP_WriteEeporm(prog_char* data,uint16_t size)
 	ISPDisable();
 	return true;
 }
-bool ISP_VerifyFlash(prog_char* data,uint16_t size)
+bool ISP_VerifyFlash(prog_char* data,u16 size)
 {
 	if(size>Flash_Size||(!ISPEnable()))
 	{
 		return false;
 	}
-	uint16_t i;
+	u16 i;
 	for(i=0;i<size;i++)
 	{
 		uint8 b1 = pgm_read_byte_near(data+i);
@@ -85,13 +85,13 @@ bool ISP_VerifyFlash(prog_char* data,uint16_t size)
 	ISPDisable();
 	return true;
 }
-bool ISP_VerifyEeeprom(prog_char* data,uint16_t size)
+bool ISP_VerifyEeeprom(prog_char* data,u16 size)
 {
 	if(size>Eeporm_Size||(!ISPEnable()))
 	{
 		return false;
 	}
-	uint16_t i;
+	u16 i;
 	for(i=0;i<size;i++)
 	{
 		if(pgm_read_byte_near(data+i)!=ISPReadEEPROM(i))

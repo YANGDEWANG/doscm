@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="gb2312"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -113,6 +113,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dev\HCF4094.h"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\hd44780.h"
 				>
 			</File>
@@ -141,6 +145,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dev\M24AA128.h"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\M62446.h"
 				>
 			</File>
@@ -158,6 +166,10 @@
 			</File>
 			<File
 				RelativePath=".\dev\radio.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dev\SN74HC164.h"
 				>
 			</File>
 			<File
@@ -241,6 +253,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dev\HCF4094.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\hd44780.c"
 				>
 			</File>
@@ -281,6 +297,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dev\M24AA128.c"
+				>
+			</File>
+			<File
 				RelativePath=".\dev\M62446.c"
 				>
 			</File>
@@ -318,6 +338,10 @@
 			</File>
 			<File
 				RelativePath=".\system\dwstd\ReverseString.c"
+				>
+			</File>
+			<File
+				RelativePath=".\dev\SN74HC164.c"
 				>
 			</File>
 			<File

@@ -31,7 +31,7 @@
 #define I2C_ENABLE_PULL		//定义使能内部上拉电阻
 #define F_I2CSCL	100000	//TWI时钟为Hz
 //pin def
-#ifdef __AVR_ATmega16__
+#if defined(__AVR_ATmega16__)||defined(__AVR_ATmega32__)
 #define I2C_POPT	C
 #define	I2C_SDA		1
 #define	I2C_SCK		0
@@ -75,6 +75,8 @@ return:	成功写入字节数
 *****************************************************/
 uint8 I2CWriteBunch(uint8 add,uint8 datAdd,uint8* dat,uint8 count);
 
+
+#endif//0
 /***************************************************
 读一个字节串从设备
 此方法针对不用提供数据地址的设备或连续读取
@@ -94,6 +96,16 @@ count:	串长度
 return:	成功读入字节数
 *****************************************************/
 uint8 I2CReadBunch(uint8 devAdd,uint8 datAdd,uint8* dat,uint8 count);
-#endif//0
+
+typedef struct IIC_STATE
+{
+	u8 IICBusy:1;
+	u8 cStop:1;
+	u8 Error:1;
+	u8 CountWaitToSend;
+}IICStatebits;
+
+extern volatile IICStatebits IICState;
+#define WaitIICIdle() {while(IICState.IICBusy);}
 
 #endif//_IIC_H_

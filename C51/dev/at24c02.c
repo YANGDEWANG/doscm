@@ -75,7 +75,7 @@ bool WriteByte24c02(uint8 Add,uint8 dat)		//Ð´Ò»×Ö½Úµ½24c02//Add:µØÖ·£»dat:Êý¾Ý£
 {
 	return Write24c02(Add,&dat,1);
 }
-#endif AT24C02_WRITEBYTE_U
+#endif //AT24C02_WRITEBYTE_U
 #ifdef AT24C02_READBYTE_U
 bool ReadByte24c02(uint8 Add,uint8 *dat)		//¶ÁÒ»×Ö½Ú´Ó24c02//Add:µØÖ·£»dat:Êý¾ÝÖ¸Õë£»re=true ¶ÁÈë³É¹¦
 {

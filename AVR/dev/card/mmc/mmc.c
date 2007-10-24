@@ -441,7 +441,7 @@ bool MMCReadBlockAt(uint8 *Buffer,uint16 size,uint16 offset,uint16 Bytes)
 	uint8 retry;
 	//Read Start Byte form MMC/SD-Card (FEh/Start Byte)
 	retry=0;
-	u8 retuyerr = MMC_ERROR_RETRY_COUN;
+	//u8 retuyerr = MMC_ERROR_RETRY_COUN;
 	u32 c=NACClockCycles;
 	while (Read_Byte_MMC() != MMC_STARTBLOCK_READ)
 	{

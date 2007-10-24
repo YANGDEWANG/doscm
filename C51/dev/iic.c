@@ -192,13 +192,81 @@ bool I2CStart(uint8 add,bool r_w)
 	return write(add)&&waitAnswer();
 }
 #ifdef I2C_V2
+#if 0
+/***************************************************
+写一个字节串到指定设备 
+add:	设备地址 
+dat:	数据首字节指针 
+count:	串长度 
+return:	成功写入字节数
+*****************************************************/
+uint8 I2CWriteStream(uint8 add,uint8* dat,uint8 count)
+{
+	uint8 i=0;
+	if(I2CStart(add,0))
+	{
+		for(;i<count;i++)
+			if(!write(dat[i])||!waitAnswer())
+				goto end;
+	}
+end:
+	IICStop();	
+	return i;
+}
+#endif
+/***************************************************
+读一个字节串从设备 
+devAdd:	设备地址 
+datAdd:	数据地址
+dat:	数据首字节指针 
+count:	串长度 
+return:	成功读入字节数
+*****************************************************/
+uint8 I2CReadBunch(uint8 devAdd,uint8 datAdd,uint8* dat,uint8 count)
+{
+	if(I2CStart(devAdd,0))
+	{
+		write(datAdd);
+		if(!waitAnswer())return 0;
+		clSCL();//结束从机的响应信号
+		return I2CReadStream(devAdd,dat,count);
+	}
+	return 0;
+#if 0
+	uint8 i = 0;
+	if(I2CStart(devAdd,0))
+	{
+		write(datAdd);
+		if(!waitAnswer())goto re;
+		clSCL();//结束从机的响应信号
+		if(I2CStart(devAdd,1))
+		{
+			while(i<count-1)
+			{
+				if(!read(dat)||!sendAnswer())
+				{
+					goto re;
+				}
+				dat++;
+				i++;
+			}
+			if(read(dat))i++;
+		}
+	}
+
+re:	setSCL();//不响应信号
+	waitSCL(IIC_WAITCYCLE);
+	//Delay(0);
+	IICStop(); //发送停止信号
+	return i;
+#endif
+}
 /***************************************************
 写一个字节串到指定设备 
 add:	设备地址 
 datAdd:	数据地址
 dat:	数据首字节指针 
 count:	串长度 
-autoStop:=true将在成功结束后产生停止信号
 return:	成功写入字节数
 *****************************************************/
 uint8 I2CWriteBunch(uint8 add,uint8 datAdd,uint8* dat,uint8 count)

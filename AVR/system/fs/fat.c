@@ -350,12 +350,12 @@ u8 FATInit()
 #ifdef FAT_USE_FILE_BUFFER
 	File TempFile;
 #endif//FAT_USE_FILE_BUFFER
-	bool onfenqu = false;
+	//bool onfenqu = false;
 	PartRecord PartInfo;
 	BPB710 *bpb;
-re:
+//re:
 	ReadBlock(0);      // ¶ÁÈ¡·ÖÇø±íĞÅÏ¢  
-	if(!onfenqu)
+	//if(!onfenqu)
 	{
 		PartInfo = *((PartRecord *) ((PartSector *)FatBuffer)->psPart);
 		// Òıµ¼ÉÈÇøºÅÔÚPartInfo.prStartLBAÖĞ
@@ -406,11 +406,11 @@ re:
 		break;
 	default:
 		{
-			if(!onfenqu)
+			/*if(!onfenqu)
 			{
 				onfenqu = true;
 				goto re;
-			}
+			}*/
 			return false;
 		}
 	}  
@@ -506,7 +506,7 @@ bool static FileFind()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖĞ³ı±íÃ÷Îª[²éÕÒ½á¹û]ÒÔÍâµÄ×
 		dir = (DIREntry *)FatBuffer;
 		for(i=0;i<16;i++)
 		{
-			fname = *dir->Name.FullName;
+			fname = *dir->FullName;
 			if((fname==SLOT_EMPTY)
 				||(fname==SLOT_DELETED))
 			{//¿Õ»ò±»É¾³ö
@@ -521,7 +521,7 @@ bool static FileFind()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖĞ³ı±íÃ÷Îª[²éÕÒ½á¹û]ÒÔÍâµÄ×
 				{
 				case FFW_FullName:
 					{
-						if(strncasecmp(dir->Name.FullName,FindFileParameter.Parameter.Parameter.FullName,11)==0)
+						if(strncasecmp((char*)dir->FullName,(char*)FindFileParameter.Parameter.Parameter.FullName,11)==0)
 						{
 							goto su;
 						}
@@ -560,7 +560,7 @@ bool static FileFind()//µ÷ÓÃ²»»á¸ü¸ÄFindFileParameterÖĞ³ı±íÃ÷Îª[²éÕÒ½á¹û]ÒÔÍâµÄ×
 #if FFW_INDEXANDEXTNAME_EN>0
 				case FFW_IndexAndExtName:
 					{
-						if(strncasecmp(dir->Name.Name.Ext,FindFileParameter.Parameter.Parameter.Name.Ext,3)==0)
+						if(strncasecmp((char*)dir->Ext,(char*)FindFileParameter.Parameter.Parameter.Name.Ext,3)==0)
 						{
 							if(fileIndex==0)
 							{
@@ -609,7 +609,7 @@ su:
 static void FileInit(File* file)
 {
 	DIREntry *dir=((DIREntry *)(FatBuffer))+FindFileParameter.FileIndexInFatBuffer;
-	memcpy(file->Name.FullName,dir->Name.FullName,11);
+	memcpy(file->FullName,dir->FullName,11);
 	file->Attributes.Attribute=dir->Attributes.Attribute;
 	file->StartCluster  = ((u32)(dir->HighClust)<<16)|dir->StartCluster;
 	file->Size = dir->Size;
@@ -701,7 +701,7 @@ bool FileOpenWithFullName(Cluster DirClust,File *file)
 {
 	FindFileParameter.DirClust = DirClust;
 	FindFileParameter.FindWith=FFW_FullName;
-	memcpy(FindFileParameter.Parameter.Parameter.FullName,file->Name.FullName,11);
+	memcpy(FindFileParameter.Parameter.Parameter.FullName,file->FullName,11);
 	if(FileFind())
 	{
 		FileInit(file);
@@ -723,7 +723,7 @@ bool FileOpenWithIndexAndExtName(Cluster DirClust,File *file,u16 index)
 	FindFileParameter.DirClust = DirClust;
 	FindFileParameter.FindWith=FFW_IndexAndExtName;
 	FindFileParameter.Parameter.Index = index;
-	memcpy(FindFileParameter.Parameter.Parameter.Name.Ext,file->Name.Name.Ext,3);
+	memcpy(FindFileParameter.Parameter.Parameter.Name.Ext,file->Ext,3);
 	if(FileFind())
 	{
 		FileInit(file);
@@ -745,7 +745,7 @@ bool FileOpenWithPath(Cluster DirClust,File *file,char* path)
 	do
 	{
 		path = PathGetDirName(name,path);
-		memcpy(file->Name.FullName,name,11);
+		memcpy(file->FullName,name,11);
 		if(!FileOpenWithFullName(DirClust,file))
 		{
 			return false;
@@ -925,7 +925,7 @@ bool FileSave(File* file)
 	if(ReadBlock(file->DirEntrySector))
 	{
 		DIREntry *dir=(DIREntry *)(FatBuffer+sizeof(DIREntry)*file->DirEntryIndex);
-		memcpy(dir->Name.FullName,file->Name.FullName,11);
+		memcpy(dir->FullName,file->FullName,11);
 		dir->Attributes.Attribute=file->Attributes.Attribute;
 		dir->HighClust = file->StartCluster>>16;
 		dir->StartCluster = file->StartCluster;
@@ -939,7 +939,7 @@ bool FileSave(File* file)
 bool FileDelete(Cluster DirClust,char fileName[11])
 {
 	File file;
-	memcpy(file.Name.FullName,fileName,sizeof(file.Name.FullName));
+	memcpy(file.FullName,fileName,sizeof(file.FullName));
 	if(FileOpenWithFullName(DirClust,&file))
 	{
 		if(file.StartCluster!=0)
@@ -951,7 +951,7 @@ bool FileDelete(Cluster DirClust,char fileName[11])
 			}
 			fatSetFAT(file.StartCluster,0);
 		}
-		file.Name.Name.Name[0]=SLOT_DELETED;
+		file.Name[0]=SLOT_DELETED;
 		FileSave(&file);
 		return true;
 	}
@@ -959,18 +959,34 @@ bool FileDelete(Cluster DirClust,char fileName[11])
 }
 
 bool FileSetPosition(File* file,u32 Position)
-{
+{//todo:err
 	if(file->Size>Position)
 	{
 		file->CurrentCluster = file->StartCluster;
-		while(Position>BytesPerClust)
+		u32 p =BytesPerClust;
+		while(Position>p)
 		{
-			fatNextCluster(&file->CurrentCluster);
+
+			if(!fatNextCluster(&file->CurrentCluster))
+				return false;
+			p+=BytesPerClust;
 		}
 		file->Position = Position;
 		return true;
 	}
 	return false;
+
+	//if(file->Size>Position)
+	//{
+	//	file->CurrentCluster = file->StartCluster;
+	//	while(Position>BytesPerClust)
+	//	{
+	//		fatNextCluster(&file->CurrentCluster);
+	//	}
+	//	file->Position = Position;
+	//	return true;
+	//}
+	//return false;
 }
 
 

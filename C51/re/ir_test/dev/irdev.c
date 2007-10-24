@@ -24,7 +24,7 @@ typedef union _IR_TIME
 }IRTime;
 
 uint16 getCurrentTime()
-{
+{ 
 	IRTime time;
 	TR1 = false;
 	time.dat[1]  =  TL1;
@@ -34,7 +34,6 @@ uint16 getCurrentTime()
 	TL1 = time.dat[1];
 	TR1 = true;
 	return time.time;
-
 }
 #define CurrentTime  getCurrentTime()
 prog_char * code ICNameS[]=
@@ -94,6 +93,8 @@ prog_char * code ICNameS[]=
 
 	"M50119",
 	"LX5104",
+	"C1",
+	"C1_TV"
 	//3起始,2用户,7键重复3起始,2用户,7键
 	//M50119
 	//
@@ -113,8 +114,6 @@ enum IR_BIT_IDENTIFY
 	IBI_PPM,
 	IBI_PWM,
 };
-
-
 uint8 IRDevState;
 uint8 ICName;
 bool  IRKeyDown,IRKeyHold;
@@ -129,7 +128,6 @@ void ShowIrInformation()
 	memset(dislinebuf,'-',sizeof(dislinebuf));
 	switch(ICName)
 	{
-	
 	case IC_TC9012:
 	case IC_HS6222:
 	case IC_PT2222:
@@ -140,6 +138,7 @@ void ShowIrInformation()
 		{
 			ToStringWithXFW(dislinebuf+2,IrInformation.CustomCodeReverse);
 		}
+	
 	case IC_SHARP:
 	case IC_SAA3010:
 	case IC_8521:
@@ -149,8 +148,8 @@ void ShowIrInformation()
 		{
 			ToStringWithXFW(dislinebuf,IrInformation.CustomCode);
 			/*if(ICName!=IC_PT2222
-				&&ICName!=IC_SAA3010
-				&&ICName!=IC_TC9012)
+			&&ICName!=IC_SAA3010
+			&&ICName!=IC_TC9012)
 			ToStringWithXFW(dislinebuf+4,IrInformation.KeyCodeReverse);*/
 			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
 			break;
@@ -166,6 +165,18 @@ void ShowIrInformation()
 			ToStringWithXFW(dislinebuf+6,IrInformation.KeyCode);
 			break;
 		}
+	case IC_C1_TV:
+		{
+			ToStringWithU(dislinebuf,IrInformation.CustomCode);
+			ToStringWithU(dislinebuf+5,IrInformation.KeyCode);
+			break;
+		}
+	case IC_C1:
+		{
+			ToStringWithU(dislinebuf,IrInformation.CustomCode);
+			ToStringWithU(dislinebuf+5,IrInformation.KeyCode);
+			break;
+		}
 	}
 	ShowString(dislinebuf,8,8);
 }
@@ -176,7 +187,7 @@ void ShowIrInformation()
 	memset(dislinebuf,'-',sizeof(dislinebuf));
 	switch(ICName)
 	{
-	
+
 	case IC_TC9012:
 	case IC_HS6222:
 	case IC_PT2222:
@@ -199,7 +210,7 @@ void ShowIrInformation()
 			break;
 		}
 	case IC_6014C8D7:
-	
+
 	case IC_SC50560:
 	case IC_UPD6124:
 	case IC_SC50462:
@@ -324,9 +335,32 @@ if(oldbit)dat++;
 }while(--i);
 return ic|(dat<<8);
 }*/
+
+//sta 比较时间
+uint8 dec3010(uint8 ic,uint8 sta)
+{
+	bool oldbit = true;
+	uint8 i = 8;
+	uint8 dat = 0;
+	do
+	{
+		dat=dat>>1;
+		if(IRChangeTime[ic]>sta)//与上一比特相反
+		{	
+			oldbit=!oldbit;
+		}
+		else
+		{
+			ic++;//与上一比特相同跳过一个电平
+		}
+		ic++;
+		if(oldbit)dat|=0X80;
+	}while(--i);
+	return dat;
+}
 void setData()
 {
-	uint8 i,b,dat,ic;
+	uint8 i,b,dat=0,ic;
 	bool oldbit;
 	if(!wait)
 	{
@@ -337,11 +371,66 @@ void setData()
 	}
 	switch(ICName)
 	{
+	case IC_C1:
+		{
+			ic=3;
+
+			b=0;
+C1RE:
+			i=4;
+			dat=0;
+			do
+			{
+				dat<<=2;
+				//0：高: 2296us，低: 1230us
+				if(2000/IR_CLICK_TIME<IRChangeTime[ic])
+				{
+					
+					ic+=2;
+				}
+				//1：高: 1722us，低: 560us，高: 480us，低: 560us
+				else if(1500/IR_CLICK_TIME<IRChangeTime[ic])
+				{
+					dat|=1;
+					ic+=4;
+				}
+
+				//2 高:1148us，低: 560us，高: 1150us，低: 560us
+				else if(1000/IR_CLICK_TIME<IRChangeTime[ic])
+				{
+					dat|=2;
+					ic+=4;
+				}
+				//3：高: 574us，低: 574us，高: 1722us，低: 574us//13578090852
+				else 
+				{
+					dat|=3;
+					ic+=4;
+				}
+
+			}while(--i);
+			if(b==0)
+			{
+
+				IrInformation.KeyCode = dat<<1;
+				b=1;
+				goto C1RE;
+			}
+			else
+			{
+				IrInformation.CustomCode = dat&0x7f;//
+				if(dat&0x80)
+				{
+					IrInformation.KeyCode++;
+				}
+
+			}
+			break;
+		}
 	case IC_HS9148:
 		{
 			i=3;
 			ic=0;
-			dat=0;
 			do
 			//for(i=0,dat=0;i<3;i++)
 			{
@@ -355,7 +444,6 @@ void setData()
 				IrInformation.KeyCodeReverse = 1;
 			i=8;
 			ic=8;
-			dat=0;
 			do
 			//for(i=0,dat=0,ic=8;i<8;i++)
 			{
@@ -375,7 +463,6 @@ void setData()
 #if 1
 			i=3;
 			ic=5;
-			dat=0;
 			do
 			//for(i=0,dat=0;i<3;i++)
 			{
@@ -411,7 +498,7 @@ void setData()
 			for(b=0;b<2;b++)
 			{
 				dat = 0;
-				
+
 				do
 				{
 					dat=dat<<1;
@@ -432,7 +519,7 @@ void setData()
 					IrInformation.KeyCodeReverse = (dat>>5)&1;
 					/*if(!(dat&1<<6))
 					{
-						ICName = IC_8521;
+					ICName = IC_8521;
 					}*/
 					i = 6;
 				}
@@ -442,7 +529,7 @@ void setData()
 			break;
 		}
 #else
-			case IC_SAA3010:
+	case IC_SAA3010:
 		{
 			ic=2;
 			oldbit = true;
@@ -593,8 +680,20 @@ void setData()
 	}
 	//	firstS = true;
 }
+uint8 leader;
+uint8 ktime;
 void dataAnalyse()
 {
+
+	uint8 dat; 	
+	ktime  =0;
+	//if(leader != IC_NULL)
+	//{
+	//	ICName = leader;
+	//	leader = IC_NULL;
+	//	goto StSetData;
+	//}
+	//
 	//bool ok = false;
 	if(IRChangec<10)//可能是重复码
 	{
@@ -639,6 +738,41 @@ void dataAnalyse()
 		if(IRKeyHold)
 			return;
 	}
+	//C1_TV
+	//if(checkWarp(610/IR_CLICK_TIME,IRChangeTime[0])&&
+	//	checkWarp(2600/IR_CLICK_TIME,IRChangeTime[1]))
+	if(checkWarp(528/IR_CLICK_TIME,IRChangeTime[0])&&
+		checkWarp((3167-528)/IR_CLICK_TIME,IRChangeTime[1]))
+	{
+		dat = dec3010(3,(528+528/2)/IR_CLICK_TIME);
+		if(leader!=IC_C1_TV)
+		{
+			leader = IC_C1_TV;
+			IrInformation.CustomCode=dat;
+		}
+		else
+		{
+			if(ICName!=IC_C1_TV)
+			{
+				ICName=IC_C1_TV;
+				IrInformation.KeyCode=dat;
+			}
+			else
+			{
+				if(IrInformation.KeyCode==dat)
+				{
+					IRKeyHold = true;
+				}
+				else
+				{
+					if(IrInformation.CustomCode==dat)
+						leader=ICName=IC_NULL;
+				}
+			}
+		}
+		return;
+	}
+	///////////////////////////////////////////
 	ICName = IC_NULL;
 	//M50119
 	if(IRChangec == 20+1
@@ -669,100 +803,115 @@ void dataAnalyse()
 			ICName = IC_LX5104;
 		}
 	}
-	if(IRChangec == 22+1)									//23
+
+	//c1
+	if(//1||
+		(checkWarp(880/IR_CLICK_TIME,IRChangeTime[0])&&
+		checkWarp(2925/IR_CLICK_TIME,IRChangeTime[1])&&
+		checkWarp(1450/IR_CLICK_TIME,IRChangeTime[2])))	
 	{
-		if(checkWarp(34,IRChangeTime[0]+IRChangeTime[1]))
-			ICName = IC_HS9148;
+		ICName = IC_C1;
 	}
-	//HS9148//IC_PT2268//UPD6124
-	if(IRChangec == 24+1)									//25
+	else
 	{
-		if(checkWarpH(12,IRChangeTime[0])&&
-			checkWarp(37,IRChangeTime[1]))
-			ICName = IC_PT2268;
-		else if(checkWarp(34,IRChangeTime[0]+IRChangeTime[1]))
-			ICName = IC_HS9148;
-		else if(checkWarp(48,IRChangeTime[0])//sony ir
-			||checkWarp(51,IRChangeTime[0]))// 美浩 ir
-			ICName = IC_UPD6124;
-	}
-	//SC50462
-	if(IRChangec == 32+1)									//33
-	{
-		//if(checkWarp(67,IRChangeTime[0])&&checkWarp(67,IRChangeTime[1]))
-		ICName =IC_SC50462;
-	}
-	//SHARP//IC_6014C8D7
-	if(IRChangec == 30+1)									//31
-	{
-		//IC_6014C8D7
-		if(checkWarp(48,IRChangeTime[0]))
-			ICName = IC_6014C8D7;
-		else
+
+		if(IRChangec == 22+1)									//23
+		{
+			if(checkWarp(34,IRChangeTime[0]+IRChangeTime[1]))
+				ICName = IC_HS9148;
+		}
+		//HS9148//IC_PT2268//UPD6124
+		if(IRChangec == 24+1)									//25
+		{
+			if(checkWarpH(12,IRChangeTime[0])&&
+				checkWarp(37,IRChangeTime[1]))
+				ICName = IC_PT2268;
+			else if(checkWarp(34,IRChangeTime[0]+IRChangeTime[1]))
+				ICName = IC_HS9148;
+			else if(checkWarp(48,IRChangeTime[0])//sony ir
+				||checkWarp(51,IRChangeTime[0]))// 美浩 ir
+				ICName = IC_UPD6124;
+		}
+		//SC50462
+		if(IRChangec == 32+1)									//33
+		{
 			//if(checkWarp(67,IRChangeTime[0])&&checkWarp(67,IRChangeTime[1]))
-			ICName = IC_SHARP;
-	}
-	//SC50560
-	if(IRChangec == 36+1)									//37
-	{
-		if((checkWarp(8400/IR_CLICK_TIME,IRChangeTime[0])&&checkWarp(4200/IR_CLICK_TIME,IRChangeTime[1]))//标准
-			||(checkWarp(170,IRChangeTime[0])&&checkWarp(77,IRChangeTime[1])))//实测
-			ICName =IC_SC50560;
-	}
-
-	if(checkWarp(67,IRChangeTime[0])&&checkWarp(67,IRChangeTime[1]))
-	{
-		//MN6014C5D6
-		if(IRChangec == 46+1)									//47
-		{
-			ICName = IC_MN6014C5D6;
+			ICName =IC_SC50462;
 		}
-		//MN6014C6D6
-		if(IRChangec == 50+1)									//51
+		//SHARP//IC_6014C8D7
+		if(IRChangec == 30+1)									//31
 		{
-			ICName = IC_MN6014C6D6;
+			//IC_6014C8D7
+			if(checkWarp(48,IRChangeTime[0]))
+				ICName = IC_6014C8D7;
+			else
+				//if(checkWarp(67,IRChangeTime[0])&&checkWarp(67,IRChangeTime[1]))
+				ICName = IC_SHARP;
+		}
+		//SC50560
+		if(IRChangec == 36+1)									//37
+		{
+			if((checkWarp(8400/IR_CLICK_TIME,IRChangeTime[0])&&checkWarp(4200/IR_CLICK_TIME,IRChangeTime[1]))//标准
+				||(checkWarp(170,IRChangeTime[0])&&checkWarp(77,IRChangeTime[1])))//实测
+				ICName =IC_SC50560;
+		}
+
+		if(checkWarp(67,IRChangeTime[0])&&checkWarp(67,IRChangeTime[1]))
+		{
+			//MN6014C5D6
+			if(IRChangec == 46+1)									//47
+			{
+				ICName = IC_MN6014C5D6;
+			}
+			//MN6014C6D6
+			if(IRChangec == 50+1)									//51
+			{
+				ICName = IC_MN6014C6D6;
+			}
+		}
+
+
+		//UPD6122,PT2222,LC7461 和LC7462
+		if(checkWarp(9000/IR_CLICK_TIME,IRChangeTime[0])
+			||checkWarp(170,IRChangeTime[0]))//有的差得太远也不知是不是别地
+		{
+			if(IRChangec == 66+1)//UPD6122,PT2222和LC7462					//67
+				ICName = IC_PT2222;
+			else if(IRChangec == 86+1)//LC7461								//87
+				ICName = IC_LC7461;
+		}
+		//TC9028,TC9012、TC9243
+		if(checkWarp(4480/IR_CLICK_TIME,IRChangeTime[0])
+			&&checkWarp(4480/IR_CLICK_TIME,IRChangeTime[1]))
+		{
+			if(IRChangec == 66+1)											//67
+				ICName = IC_TC9012;
+		}
+		//IC_LC7464
+		if(IRChangec == 99)									//99
+		{
+			if(checkWarp(68,IRChangeTime[0]))
+			{
+				if(checkWarp(34,IRChangeTime[1]))
+					ICName = IC_LC7464;
+
+			}
+		}
+
+		//SAA3010
+		//if(checkWarp(17,IRChangeTime[0])&&checkWarp(17,IRChangeTime[1]))	//xx
+		if(checkWarpH(17,IRChangeTime[0])||checkWarp(34,IRChangeTime[0]))	//不同与datasheet上面的同
+		{
+			ICName = IC_SAA3010;
 		}
 	}
-
-
-	//UPD6122,PT2222,LC7461 和LC7462
-	if(checkWarp(9000/IR_CLICK_TIME,IRChangeTime[0])
-		||checkWarp(170,IRChangeTime[0]))//有的差得太远也不知是不是别地
-	{
-		if(IRChangec == 66+1)//UPD6122,PT2222和LC7462					//67
-			ICName = IC_PT2222;
-		else if(IRChangec == 86+1)//LC7461								//87
-			ICName = IC_LC7461;
-	}
-	//TC9028,TC9012、TC9243
-	if(checkWarp(4480/IR_CLICK_TIME,IRChangeTime[0])
-		&&checkWarp(4480/IR_CLICK_TIME,IRChangeTime[1]))
-	{
-		if(IRChangec == 66+1)											//67
-			ICName = IC_TC9012;
-	}
-	//IC_LC7464
-	if(IRChangec == 99)									//99
-	{
-		if(checkWarp(68,IRChangeTime[0]))
-		{
-			if(checkWarp(34,IRChangeTime[1]))
-				ICName = IC_LC7464;
-
-		}
-	}
-
-	//SAA3010
-	//if(checkWarp(17,IRChangeTime[0])&&checkWarp(17,IRChangeTime[1]))	//xx
-	if(checkWarpH(17,IRChangeTime[0])||checkWarp(34,IRChangeTime[0]))	//不同与datasheet上面的同
-	{
-		ICName = IC_SAA3010;
-	}
-
-
+	//StSetData:
 	if(ICName != IC_NULL)
 	{
 		setData();
+	}
+	else
+	{
 	}
 	/*else
 	{
@@ -890,9 +1039,17 @@ void IrDevDiv()
 #endif
 void PollIR10ms()
 {
+	if(ktime<20)
+	{
+		ktime++;
+	}
+	else
+	{
+		ktime=0;
+		leader=ICName=IC_NULL;
+	}
 	if(IRDisableSysC)
 	{
-
 		IRDisableSysC--;
 		if(IRDisableSysC==0)
 		{

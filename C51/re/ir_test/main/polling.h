@@ -32,7 +32,8 @@ extern bool ebb;
 #define bbONTime(time) (bbtime = time)//µ¥Î»£º10ms
 #define bbstd()  bbONTime(7)
 #define bbwarn() bbONTime(60)
-#define bberr()  bbtime=8;ebb=true
+//#define bberr()  bbtime=8;ebb=true
+#define bberr()  bbtime=80
 //#define InUserEvent() (UserEventExitCount=0)
 void PollingMain();
 

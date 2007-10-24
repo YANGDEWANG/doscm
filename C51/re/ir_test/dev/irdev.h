@@ -31,6 +31,8 @@ enum IC_NAME
 	IC_SC50560,
 	IC_M50119,
 	IC_LX5104,
+	IC_C1,
+	IC_C1_TV,
 	IC_MAX,
 };
 enum IR_DEV_STATE

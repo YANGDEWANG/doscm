@@ -134,9 +134,9 @@ typedef struct DIR_ENTRY{
 #define SLOT_E5         0x05   		 
 #define SLOT_DELETED    0xe5   		// 文件已被删除
 				u8	Ext[3];			// 扩展名
-			}Name;
+			};
 			u8 FullName[11];
-		}Name;//文件名
+		};//文件名
 		//u8		Attributes;  		// 文件属性
 	union	
 	{
@@ -235,9 +235,9 @@ typedef struct _FILE{
 		{
 			u8	Name[8];         // 文件名
 			u8	Ext[3];			// 扩展名
-		}Name;
+		};
 		u8 FullName[11];
-	}Name;
+	};
 	union	
 	{
 		u8 Attribute;

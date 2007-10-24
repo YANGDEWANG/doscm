@@ -24,6 +24,14 @@ typedef uchar	BYTE;
 typedef uchar	uint8;
 typedef uint	uint16;
 typedef ulong	uint32;
+typedef	int8	i8;
+typedef	int16	i16;
+typedef	int32	i32;
+typedef	uint8	u8;
+typedef	uint16	u16;
+typedef	uint32	u32;
+
+
 
 typedef unsigned char	_uchar;
 typedef unsigned int	_uint;

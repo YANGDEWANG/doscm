@@ -21,14 +21,18 @@
 * http://www.gnu.org/copyleft/gpl.html
 */
 #include <global.h>
-#include "iic.h"
+#include "dev\iic.h"
 #include <util/twi.h>
 #include <avr/interrupt.h>
 //#define IIC_DEBUG
+//struct IIC_STATE IICStatebits;
 
+#define S_start()	{TWCR =(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWSTA);IICState.Error = false;}
+#define S_stop()	{TWCR =(1<<TWINT)|(1<<TWEN)|(1<<TWSTO);IICState.cStop = false;IICState.IICBusy = false;}
+#define S_ack()		(TWCR =(1<<TWINT)|(1<<TWEN)|(1<<TWIE)|(1<<TWEA))
+#define S_nack()	(TWCR =(1<<TWINT)|(1<<TWEN)|(1<<TWIE))
+#define WaitIICIdle() {while(IICState.IICBusy);}
 
-#define S_start()	(TWCR =(1<<TWSTA)|(1<<TWINT)|(1<<TWEN)|(1<<TWIE))
-#define S_stop()	(TWCR = (1<<TWINT)|(1<<TWEN)|(1<<TWSTO))
 //TWCR只能IN/OUT,直接赋值比逻辑运算(|= &=)更节省空间
 
 
@@ -80,10 +84,12 @@
 #define IICPIN  GPIN(I2C_POPT)
 #define IICDDR  GDDR(I2C_POPT)
 
-bool volatile IICBusy;
+volatile IICStatebits IICState;
+//bool volatile IICBusy;
 static uint8* dataPtr;
 static uint8  srAdd;
-static uint8  dataCount;
+#define dataCount IICState.CountWaitToSend
+//volatile static uint8  dataCount;
 void IniIIC()
 {
 	IICDDR  &= ~(_BV(I2C_SCK)|_BV(I2C_SDA));
@@ -96,7 +102,7 @@ void IniIIC()
 	TWSR=0;									//预分频=0^4=1
 	TWAR=0x00;									//主机模式，该地址无效
 	TWCR=0x00;									//关闭TWI模块
-	IICBusy = false;
+	IICState.IICBusy = false;
 	TWBR=TWBR_SET;
 }
 #ifdef I2C_SHARE_SDA_PIN
@@ -123,16 +129,16 @@ add:	设备地址
 dat:	数据首字节指针 
 count:	串长度 
 *****************************************************/
-void I2CWriteStream(uint8 add,uint8* dat,uint8 count)
+void I2CWriteStream(uint8 devAdd,uint8* dat,uint8 count)
 {
 #ifndef AVRSIMULATOR
-	while(IICBusy);
+	WaitIICIdle();
 #endif//AVRSIMULATOR
 #ifdef I2C_SHARE_SDA_PIN
 	IniIIC();
 #endif//I2C_SHARE_SDA_PIN
-	IICBusy = true;
-	srAdd	= add<<1;
+	IICState.IICBusy = true;
+	srAdd	= devAdd<<1;
 	dataPtr = dat;
 	dataCount = count;
 	//if(TWCR&(1<<TWEN))
@@ -156,6 +162,10 @@ uint8 I2CWriteBunch(uint8 add,uint8 datAdd,uint8* dat,uint8 count)
 	return 0;
 }
 
+
+
+
+#endif//0
 /***************************************************
 读一个字节串从设备
 此方法针对不用提供数据地址的设备或连续读取
@@ -166,9 +176,22 @@ return:	成功读入字节数
 *****************************************************/
 uint8 I2CReadStream(uint8 devAdd,uint8* dat,uint8 count)
 {
-	return 0;
+#ifndef AVRSIMULATOR
+	WaitIICIdle();
+#endif//AVRSIMULATOR
+#ifdef I2C_SHARE_SDA_PIN
+	IniIIC();
+#endif//I2C_SHARE_SDA_PIN
+	IICState.IICBusy = true;
+	srAdd	= (devAdd<<1)+1;
+	dataPtr = dat;
+	dataCount = count;
+	S_start();
+#ifndef AVRSIMULATOR
+	WaitIICIdle();
+#endif//AVRSIMULATOR
+	return count-dataCount;
 }
-
 /***************************************************
 读一个字节串从设备 
 devAdd:	设备地址 
@@ -179,9 +202,27 @@ return:	成功读入字节数
 *****************************************************/
 uint8 I2CReadBunch(uint8 devAdd,uint8 datAdd,uint8* dat,uint8 count)
 {
-	return 0;
+#ifdef I2C_SHARE_SDA_PIN
+	IniIIC();
+#endif//I2C_SHARE_SDA_PIN
+	IICState.cStop=true;
+	I2CWriteStream(devAdd,&datAdd,1);
+
+#ifndef AVRSIMULATOR
+	WaitIICIdle();
+#endif//AVRSIMULATOR
+	if(IICState.Error)
+		return 0;
+	IICState.IICBusy = true;
+	srAdd	= (devAdd<<1)+1;
+	dataPtr = dat;
+	dataCount = count;
+	S_start();
+#ifndef AVRSIMULATOR
+	WaitIICIdle();
+#endif//AVRSIMULATOR
+	return count-dataCount;
 }
-#endif//0
 ISR(SIG_2WIRE_SERIAL)
 {
 
@@ -214,17 +255,63 @@ ISR(SIG_2WIRE_SERIAL)
 			}
 			else
 			{
-				S_stop();
-				IICBusy = false;//TODO:
+				if(!IICState.cStop)
+				{
+					S_stop();
+				}
+				else
+				{
+					//S_nack();
+				}
+				IICState.cStop = false;
+				IICState.IICBusy = false;//TODO:
+
 			}
 			break;
 		}
+	case TW_MR_SLA_R_ACK://已发送SLA_R,接收到ACK；加载数据( 字节)
+		{
+			if(dataCount>1)
+			{
+				S_ack();
+			}
+			else
+			{
+				S_nack();
+			}
+			break;
+		}
+	case TW_MR_DATA_ACK://接收数据,ACK 已返回
+		{
+			dataCount--;
+			*dataPtr++=TWDR;
+			if(dataCount>1)
+			{
+				S_ack();
+			}
+			else
+			{
+				S_nack();
+			}
+			break;
+		}
+	case TW_MR_DATA_NACK://接收数据,NACK 已返回
+		{
+			dataCount--;
+			*dataPtr++=TWDR;
+			S_stop();
+			//IICState.IICBusy = false;//TODO:
+			break;
+		}
 #ifndef IIC_DEBUG
+
+	case TW_MR_SLA_R_NACK://已发送SLA_R,接收到NACK
 	case TW_MT_DATA_NACK:	//数据已发送,接收到NACK		
 	case TW_MT_SLA_W_NACK:	//已发送SLA_W,接收到NACK	
 		{
 			S_stop();
-			IICBusy = false;
+			IICState.Error = true;
+			//IICState.IICBusy = false;
 #ifdef ErrorCodeShow
 			ShowErrorCode(ErrorCode_TW_MT_NACK);
 #endif
@@ -234,14 +321,15 @@ ISR(SIG_2WIRE_SERIAL)
 	case TW_BUS_ERROR:	//由于非法的START 或STOP 引起的总线错误
 		{
 			S_stop();
-			IICBusy = false;
+			IICState.Error = true;
+			//IICState.IICBusy = false;
 			break;
 		}
-	/*default:
+		/*default:
 		{
-			S_stop();
-			IICBusy = false;
-			break;
+		S_stop();
+		IICBusy = false;
+		break;
 		}*/
 	}
 }
