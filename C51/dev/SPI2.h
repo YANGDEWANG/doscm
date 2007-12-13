@@ -68,7 +68,7 @@ sbit SCK_VSPI2 = SCK_VSPI2_PIN;
 #ifdef VSPI2_SYNCHRO
 extern volatile bool VSPI2_Transmiting;//传输过程中为1，不要写他
 extern void InVSPI2(void);			//开始使用时调用
-static void __inline__ OutVSPI2(void)//结束使用时调用
+static void __isrs.NLine__ OutVSPI2(void)//结束使用时调用
 {
 	VSPI2_Transmiting = false;
 }

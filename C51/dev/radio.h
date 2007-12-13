@@ -30,7 +30,7 @@ void	DriveRadio(void);					//驱动Radio，需要重复调用以搜台
 
 /*
 *设置频率
-*调用方法前请先设置“LC72131CurrentFrequency”。			   inline
+*调用方法前请先设置“LC72131CurrentFrequency”。			   isrs.NLine
 *seek:	为true 将进行中频计数，等待40ms后调用“IsLock“判断是否有台。
 */
 //extern void		SeekFrequency(bool seek);		

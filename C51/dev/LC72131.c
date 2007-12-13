@@ -32,13 +32,13 @@
 
 ////定义数据接口引脚
 #ifdef __AVR__
-static void inline setCE()	
+static void isrs.NLine setCE()	
 { 
 
 	PORT_Readio |= (1<<ReadioSTB);
 
 }
-static void inline clCE()
+static void isrs.NLine clCE()
 {
 	PORT_Readio &=~(1<<ReadioSTB);
 

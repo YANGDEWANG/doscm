@@ -48,7 +48,7 @@ typedef uint8	bool;
 #define perchdata 
 #endif
 #ifdef __C51__
-#define inline//C51不支持
+#define isrs.NLine//C51不支持
 typedef char code prog_char;
 typedef bit	bool;
 #define perchdata idata

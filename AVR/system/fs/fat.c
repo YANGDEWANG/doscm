@@ -908,8 +908,8 @@ bool FileNew(Cluster DirClust,char fileName[11],u8 Attributes)
 			dir->MDate = getFileDate();
 			dir->ADate = getFileDate();
 			memcpy(dir,fileName,11);
-			WriteBlock(FatBufferLBA);
-			return WriteBlock(FatBufferLBA+FatSectorCount);
+			return WriteBlock(FatBufferLBA);
+			//WriteBlock(FatBufferLBA+FatSectorCount);remove at 2007-12-13//可导致文件损坏
 		}
 	}
 	return false;
